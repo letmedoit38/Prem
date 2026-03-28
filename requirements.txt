@@ -1,0 +1,12 @@
+kiteconnect==5.0.1
+pandas==2.2.2
+numpy==1.26.4
+pandas-ta==0.3.14b0
+APScheduler==3.10.4
+python-dotenv==1.0.1
+pyotp==2.9.0
+requests==2.31.0
+pytz==2024.1
+holidays==0.46
+websocket-client==1.8.0
+loguru==0.7.2
