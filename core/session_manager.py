@@ -2,21 +2,19 @@
 Zerodha KiteConnect Session Manager.
 
 Handles the full daily authentication flow:
-  1. Generate Kite login URL
-  2. Auto-submit credentials + TOTP via requests (no browser needed)
-  3. Exchange the request_token for an access_token
-  4. Persist the access_token for the trading day
-  5. Provide a ready-to-use KiteConnect instance to all bots
-
-Zerodha login endpoint uses a standard form + TOTP – this module
-replicates that flow programmatically using `requests`.
+  1. Hit Connect OAuth URL to establish API key context in the session
+  2. POST credentials (user_id + password)
+  3. POST TOTP code
+  4. Capture request_token from the 302 redirect Location header
+  5. Exchange request_token + api_secret for access_token
+  6. Persist access_token for the trading day
 """
 import os
 import json
-import time
 import pyotp
 import requests
 from datetime import date
+from urllib.parse import urlparse, parse_qs
 from kiteconnect import KiteConnect
 
 from config.settings import (
@@ -27,7 +25,6 @@ from config.settings import (
 from utils.logger import setup_logger
 
 log = setup_logger("session_manager")
-
 TOKEN_FILE = os.path.join(LOG_DIR, "session_token.json")
 
 
@@ -38,29 +35,43 @@ class SessionManager:
         self.kite: KiteConnect = KiteConnect(api_key=ZERODHA_API_KEY)
         self._access_token: str | None = None
 
-    # ── Public API ────────────────────────────────────────────────────────────
-
     def get_kite(self) -> KiteConnect:
         """Return an authenticated KiteConnect instance, refreshing if needed."""
         if not self._is_token_valid():
             self._authenticate()
         return self.kite
 
-    # ── Authentication flow ───────────────────────────────────────────────────
-
     def _authenticate(self) -> None:
-        """Run the full Zerodha login flow and store the access token."""
-        log.info("Starting Zerodha authentication…")
+        """
+        Full Zerodha OAuth login flow.
 
-        # Step 1 – POST credentials to Kite login API
+        Root cause of previous failures:
+          Zerodha only includes request_token in the post-TOTP redirect when
+          the session was started through the Connect OAuth URL with the API key.
+          Hitting /api/login directly (without step 1) returns a plain web
+          session with no request_token -- hence the empty {"data":{"profile":{}}}
+          response seen in debug output.
+        """
+        log.info("Starting Zerodha authentication…")
         session = requests.Session()
-        login_url = "https://kite.zerodha.com/api/login"
-        resp = session.post(login_url, data={
-            "user_id": ZERODHA_USER_ID,
+
+        # ── Step 1: Establish OAuth context ──────────────────────────────────
+        # This GET call sets session cookies that bind the login to the API key
+        # and redirect URL registered in kite.trade → My Apps.
+        # Without this, Zerodha has no API context and never issues a request_token.
+        connect_url = (
+            f"https://kite.zerodha.com/connect/login?api_key={ZERODHA_API_KEY}&v=3"
+        )
+        session.get(connect_url, timeout=15)
+        log.info("OAuth context established.")
+
+        # ── Step 2: Submit credentials ────────────────────────────────────────
+        r1 = session.post("https://kite.zerodha.com/api/login", data={
+            "user_id":  ZERODHA_USER_ID,
             "password": ZERODHA_PASSWORD,
         }, timeout=15)
-        resp.raise_for_status()
-        login_data = resp.json()
+        r1.raise_for_status()
+        login_data = r1.json()
 
         if login_data.get("status") != "success":
             raise RuntimeError(f"Login failed: {login_data}")
@@ -68,71 +79,55 @@ class SessionManager:
         request_id = login_data["data"]["request_id"]
         log.info("Password accepted, submitting TOTP…")
 
-        # Step 2 – POST TOTP  (do NOT follow redirects – the redirect goes to
-        # the app's redirect URL, e.g. https://127.0.0.1, which is unreachable.
-        # The request_token is embedded in that redirect URL, which Zerodha
-        # returns inside the JSON body under data.redirect_url.)
+        # ── Step 3: Submit TOTP (no redirect follow) ──────────────────────────
+        # With the OAuth context active, Zerodha responds with HTTP 302 and sets
+        # the Location header to:
+        #   https://127.0.0.1?request_token=XXX&action=login&type=login
+        # We must NOT follow this redirect (it goes to localhost which is unreachable).
         totp_code = pyotp.TOTP(ZERODHA_TOTP_SECRET).now()
-        twofa_url = "https://kite.zerodha.com/api/twofa"
-        resp2 = session.post(twofa_url, data={
+        r2 = session.post("https://kite.zerodha.com/api/twofa", data={
             "user_id":     ZERODHA_USER_ID,
             "request_id":  request_id,
             "twofa_value": totp_code,
             "twofa_type":  "totp",
         }, timeout=15, allow_redirects=False)
 
-        # Zerodha may respond with 200 (JSON body) or 302 (Location header)
-        twofa_data = {}
-        if resp2.status_code in (200, 302):
+        # If TOTP was wrong Zerodha returns 200 with status=error
+        if r2.status_code == 200:
             try:
-                twofa_data = resp2.json()
-            except Exception:
+                body = r2.json()
+                if body.get("status") == "error":
+                    raise RuntimeError(f"TOTP rejected by Zerodha: {body}")
+            except ValueError:
                 pass
-        else:
-            resp2.raise_for_status()
 
-        if twofa_data.get("status") not in ("success", None):
-            # status key missing on 302 responses – that is still a success
-            if twofa_data.get("status") == "error":
-                raise RuntimeError(f"TOTP failed: {twofa_data}")
-
-        # Step 3 – Extract request_token
-        # Priority 1: JSON body → data.redirect_url
-        # Priority 2: HTTP Location header (302 response)
-        from urllib.parse import urlparse, parse_qs
-
-        redirect_url = (
-            twofa_data.get("data", {}).get("redirect_url", "")
-            or resp2.headers.get("Location", "")
-        )
-
-        if not redirect_url:
+        # ── Step 4: Extract request_token from Location header ────────────────
+        location = r2.headers.get("Location", "")
+        if not location:
             raise RuntimeError(
-                "Zerodha did not return a redirect URL after TOTP. "
-                "Verify your TOTP secret and that TOTP is enabled on your account."
+                f"No Location header in TOTP response (status={r2.status_code}).\n"
+                f"Response body: {r2.text[:300]}\n"
+                "Make sure the redirect URL in kite.trade → My Apps is exactly: "
+                "https://127.0.0.1"
             )
 
-        parsed = urlparse(redirect_url)
-        params = parse_qs(parsed.query)
-
+        params = parse_qs(urlparse(location).query)
         if "request_token" not in params:
             raise RuntimeError(
-                f"request_token not found in redirect URL: {redirect_url}\n"
-                "Check API redirect URL is set to https://127.0.0.1 in kite.trade \u2192 My Apps."
+                f"request_token not found in redirect: {location}\n"
+                "Check kite.trade → My Apps redirect URL = https://127.0.0.1"
             )
 
         request_token = params["request_token"][0]
-        log.info("Obtained request_token, generating session…")
+        log.info("request_token obtained, generating access token…")
 
-        # Step 4 – Generate session (access_token)
+        # ── Step 5: Exchange request_token for access_token ───────────────────
         kite_session = self.kite.generate_session(
             request_token, api_secret=ZERODHA_API_SECRET
         )
         access_token = kite_session["access_token"]
         self.kite.set_access_token(access_token)
         self._access_token = access_token
-
-        # Step 5 – Persist token for today
         self._save_token(access_token)
         log.info("Authentication successful. Access token saved.")
 
@@ -150,7 +145,7 @@ class SessionManager:
             data = json.load(f)
         if data.get("date") == str(date.today()):
             return data.get("token")
-        return None  # Token is from a previous day
+        return None
 
     def _is_token_valid(self) -> bool:
         if self._access_token:
@@ -160,7 +155,6 @@ class SessionManager:
             self.kite.set_access_token(saved)
             self._access_token = saved
             log.info("Loaded today's access token from cache.")
-            # Quick validation ping
             try:
                 self.kite.profile()
                 return True
@@ -170,7 +164,6 @@ class SessionManager:
         return False
 
 
-# Module-level singleton
 _session: SessionManager | None = None
 
 
