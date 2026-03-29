@@ -118,7 +118,7 @@ class SessionManager:
         if "request_token" not in params:
             raise RuntimeError(
                 f"request_token not found in redirect URL: {redirect_url}\n"
-                "Check API redirect URL is set to https://127.0.0.1 in kite.trade → My Apps."
+                "Check API redirect URL is set to https://127.0.0.1 in kite.trade \u2192 My Apps."
             )
 
         request_token = params["request_token"][0]
