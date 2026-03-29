@@ -68,40 +68,57 @@ class SessionManager:
         request_id = login_data["data"]["request_id"]
         log.info("Password accepted, submitting TOTP…")
 
-        # Step 2 – POST TOTP
+        # Step 2 – POST TOTP  (do NOT follow redirects – the redirect goes to
+        # the app's redirect URL, e.g. https://127.0.0.1, which is unreachable.
+        # The request_token is embedded in that redirect URL, which Zerodha
+        # returns inside the JSON body under data.redirect_url.)
         totp_code = pyotp.TOTP(ZERODHA_TOTP_SECRET).now()
         twofa_url = "https://kite.zerodha.com/api/twofa"
         resp2 = session.post(twofa_url, data={
-            "user_id":    ZERODHA_USER_ID,
-            "request_id": request_id,
+            "user_id":     ZERODHA_USER_ID,
+            "request_id":  request_id,
             "twofa_value": totp_code,
-            "twofa_type": "totp",
-        }, timeout=15)
-        resp2.raise_for_status()
-        twofa_data = resp2.json()
+            "twofa_type":  "totp",
+        }, timeout=15, allow_redirects=False)
 
-        if twofa_data.get("status") != "success":
-            raise RuntimeError(f"TOTP failed: {twofa_data}")
+        # Zerodha may respond with 200 (JSON body) or 302 (Location header)
+        twofa_data = {}
+        if resp2.status_code in (200, 302):
+            try:
+                twofa_data = resp2.json()
+            except Exception:
+                pass
+        else:
+            resp2.raise_for_status()
 
-        # Step 3 – Extract request_token from redirect URL
-        redirect_url = resp2.url  # requests follows redirect automatically
-        # The final URL contains ?request_token=xxx&action=login&type=login
+        if twofa_data.get("status") not in ("success", None):
+            # status key missing on 302 responses – that is still a success
+            if twofa_data.get("status") == "error":
+                raise RuntimeError(f"TOTP failed: {twofa_data}")
+
+        # Step 3 – Extract request_token
+        # Priority 1: JSON body → data.redirect_url
+        # Priority 2: HTTP Location header (302 response)
         from urllib.parse import urlparse, parse_qs
+
+        redirect_url = (
+            twofa_data.get("data", {}).get("redirect_url", "")
+            or resp2.headers.get("Location", "")
+        )
+
+        if not redirect_url:
+            raise RuntimeError(
+                "Zerodha did not return a redirect URL after TOTP. "
+                "Verify your TOTP secret and that TOTP is enabled on your account."
+            )
+
         parsed = urlparse(redirect_url)
         params = parse_qs(parsed.query)
 
-        # If requests didn't follow redirect, manually follow
-        if "request_token" not in params:
-            # Try fetching the redirect manually
-            kite_redirect = twofa_data.get("data", {}).get("redirect_url", "")
-            if kite_redirect:
-                parsed = urlparse(kite_redirect)
-                params = parse_qs(parsed.query)
-
         if "request_token" not in params:
             raise RuntimeError(
-                "Could not extract request_token from Zerodha redirect. "
-                "Check credentials and TOTP secret."
+                f"request_token not found in redirect URL: {redirect_url}\n"
+                "Check API redirect URL is set to https://127.0.0.1 in kite.trade → My Apps."
             )
 
         request_token = params["request_token"][0]
