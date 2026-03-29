@@ -52,12 +52,12 @@ class SessionManager:
           session with no request_token -- hence the empty {"data":{"profile":{}}}
           response seen in debug output.
         """
-        log.info("Starting Zerodha authentication…")
+        log.info("Starting Zerodha authentication\u2026")
         session = requests.Session()
 
-        # ── Step 1: Establish OAuth context ──────────────────────────────────
+        # \u2500\u2500 Step 1: Establish OAuth context \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         # This GET call sets session cookies that bind the login to the API key
-        # and redirect URL registered in kite.trade → My Apps.
+        # and redirect URL registered in kite.trade \u2192 My Apps.
         # Without this, Zerodha has no API context and never issues a request_token.
         connect_url = (
             f"https://kite.zerodha.com/connect/login?api_key={ZERODHA_API_KEY}&v=3"
@@ -65,7 +65,7 @@ class SessionManager:
         session.get(connect_url, timeout=15)
         log.info("OAuth context established.")
 
-        # ── Step 2: Submit credentials ────────────────────────────────────────
+        # \u2500\u2500 Step 2: Submit credentials \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         r1 = session.post("https://kite.zerodha.com/api/login", data={
             "user_id":  ZERODHA_USER_ID,
             "password": ZERODHA_PASSWORD,
@@ -77,9 +77,9 @@ class SessionManager:
             raise RuntimeError(f"Login failed: {login_data}")
 
         request_id = login_data["data"]["request_id"]
-        log.info("Password accepted, submitting TOTP…")
+        log.info("Password accepted, submitting TOTP\u2026")
 
-        # ── Step 3: Submit TOTP (no redirect follow) ──────────────────────────
+        # \u2500\u2500 Step 3: Submit TOTP (no redirect follow) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         # With the OAuth context active, Zerodha responds with HTTP 302 and sets
         # the Location header to:
         #   https://127.0.0.1?request_token=XXX&action=login&type=login
@@ -101,13 +101,13 @@ class SessionManager:
             except ValueError:
                 pass
 
-        # ── Step 4: Extract request_token from Location header ────────────────
+        # \u2500\u2500 Step 4: Extract request_token from Location header \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         location = r2.headers.get("Location", "")
         if not location:
             raise RuntimeError(
                 f"No Location header in TOTP response (status={r2.status_code}).\n"
                 f"Response body: {r2.text[:300]}\n"
-                "Make sure the redirect URL in kite.trade → My Apps is exactly: "
+                "Make sure the redirect URL in kite.trade \u2192 My Apps is exactly: "
                 "https://127.0.0.1"
             )
 
@@ -115,13 +115,13 @@ class SessionManager:
         if "request_token" not in params:
             raise RuntimeError(
                 f"request_token not found in redirect: {location}\n"
-                "Check kite.trade → My Apps redirect URL = https://127.0.0.1"
+                "Check kite.trade \u2192 My Apps redirect URL = https://127.0.0.1"
             )
 
         request_token = params["request_token"][0]
-        log.info("request_token obtained, generating access token…")
+        log.info("request_token obtained, generating access token\u2026")
 
-        # ── Step 5: Exchange request_token for access_token ───────────────────
+        # \u2500\u2500 Step 5: Exchange request_token for access_token \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         kite_session = self.kite.generate_session(
             request_token, api_secret=ZERODHA_API_SECRET
         )
@@ -131,7 +131,7 @@ class SessionManager:
         self._save_token(access_token)
         log.info("Authentication successful. Access token saved.")
 
-    # ── Token persistence ─────────────────────────────────────────────────────
+    # \u2500\u2500 Token persistence \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
     def _save_token(self, token: str) -> None:
         os.makedirs(LOG_DIR, exist_ok=True)
@@ -159,7 +159,7 @@ class SessionManager:
                 self.kite.profile()
                 return True
             except Exception:
-                log.warning("Cached token invalid, re-authenticating…")
+                log.warning("Cached token invalid, re-authenticating\u2026")
                 self._access_token = None
         return False
 
@@ -175,5 +175,5 @@ def get_session() -> SessionManager:
 
 
 def get_kite() -> KiteConnect:
-    """Convenience function – returns a ready KiteConnect instance."""
+    """Convenience function \u2013 returns a ready KiteConnect instance."""
     return get_session().get_kite()
