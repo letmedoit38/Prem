@@ -3,7 +3,9 @@ Bot 1 – EMA Crossover Momentum Strategy.
 
 Logic:
   Entry  : Fast EMA (9) crosses ABOVE slow EMA (21) while price is
-            above the trend EMA (50). RSI between 40–65 (not overbought).
+            above the trend EMA (50). RSI between 45–65. Volume ≥ 1.2×
+            20-bar average (confirms institutional participation).
+            Session filter: skip the choppy 11:30–13:00 lunch window.
   Exit   :
     • Stop loss   : Entry price - (1.5 × ATR)
     • Target      : Entry price + (2.5 × ATR)  [risk:reward ≈ 1:1.67]
@@ -14,7 +16,7 @@ Logic:
 Instruments: highly-liquid large-cap NSE stocks.
 Candle interval: 5 minutes.
 """
-from datetime import datetime
+from datetime import datetime, time as dt_time
 
 import pytz
 
@@ -40,8 +42,16 @@ class EMACrossoverBot(BaseStrategy):
 
     # ── Entry scan ─────────────────────────────────────────────────────────────
 
+    def _in_valid_session(self) -> bool:
+        """Skip the choppy 11:30–13:00 lunch window."""
+        ist = pytz.timezone(TIMEZONE)
+        now_time = datetime.now(ist).time()
+        return not (dt_time(11, 30) <= now_time <= dt_time(13, 0))
+
     def scan(self) -> None:
         if not self.risk.can_trade(self.name):
+            return
+        if not self._in_valid_session():
             return
 
         for symbol in self.symbols:
@@ -71,10 +81,14 @@ class EMACrossoverBot(BaseStrategy):
                      (last[f"ema_{EMA_FAST}"] >  last[f"ema_{EMA_SLOW}"])
 
         above_trend = last["close"] > last[f"ema_{EMA_TREND}"]
-        rsi_ok      = 40 < last["rsi"] < 65
+        rsi_ok      = 45 < last["rsi"] < 65   # Tightened: was 40–65
         atr         = last["atr"]
 
-        if not (crossed_up and above_trend and rsi_ok):
+        # Volume confirmation: require 1.2× 20-bar average (was no check)
+        avg_vol  = df["volume"].rolling(20).mean().iloc[-1]
+        vol_ok   = last["volume"] >= avg_vol * 1.2 if avg_vol > 0 else False
+
+        if not (crossed_up and above_trend and rsi_ok and vol_ok):
             return
 
         # Size the position

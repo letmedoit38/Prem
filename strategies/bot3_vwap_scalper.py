@@ -99,7 +99,7 @@ class VWAPScalperBot(BaseStrategy):
         # Conditions
         below_vwap       = deviation_pct >= VWAP_DEVIATION_PCT
         momentum_return  = last["close"] > prev["close"]     # price bouncing back
-        volume_spike     = last["volume"] >= avg_vol * 0.8   # decent volume
+        volume_spike     = last["volume"] >= avg_vol * 1.2   # raised from 0.8× to 1.2× avg
 
         if not (below_vwap and momentum_return and volume_spike):
             return

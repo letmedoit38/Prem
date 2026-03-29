@@ -26,7 +26,7 @@ from apscheduler.triggers.cron import CronTrigger
 
 from config.settings import (
     MARKET_CLOSE_TIME, SQUARE_OFF_TIME, BOT_START_TIME, TIMEZONE,
-    MOMENTUM_BOT_SYMBOLS, RSI_BOT_SYMBOLS, VWAP_BOT_SYMBOLS,
+    MOMENTUM_BOT_SYMBOLS, RSI_BOT_SYMBOLS, VWAP_BOT_SYMBOLS, MTC_BOT_SYMBOLS,
 )
 from core.session_manager import get_kite
 from core.order_manager import OrderManager
@@ -35,6 +35,7 @@ from scheduler.market_calendar import is_market_open_today
 from strategies.bot1_ema_crossover import EMACrossoverBot
 from strategies.bot2_rsi_reversal import RSIReversalBot
 from strategies.bot3_vwap_scalper import VWAPScalperBot
+from strategies.bot4_mtc import MTCBot
 from utils.logger import setup_logger
 from utils.notifier import notify_daily_summary
 
@@ -95,11 +96,12 @@ def start_trading_session() -> None:
     bot1 = EMACrossoverBot(kite, MOMENTUM_BOT_SYMBOLS)
     bot2 = RSIReversalBot(kite, RSI_BOT_SYMBOLS)
     bot3 = VWAPScalperBot(kite, VWAP_BOT_SYMBOLS)
-    _active_bots = [bot1, bot2, bot3]
+    bot4 = MTCBot(kite, MTC_BOT_SYMBOLS)
+    _active_bots = [bot1, bot2, bot3, bot4]
 
     # Start bot threads
     _bot_threads = [bot.start_in_thread() for bot in _active_bots]
-    log.info(f"All {len(_active_bots)} bots started. Market opens at 09:15.")
+    log.info(f"All {len(_active_bots)} bots started (Bot1 EMA, Bot2 RSI, Bot3 VWAP, Bot4 MTC). Market opens at 09:15.")
 
 
 def stop_trading_session() -> None:

@@ -6,6 +6,10 @@ Logic:
             still in an overall uptrend (price > 50 EMA).
             Wait for RSI to turn back up (previous candle RSI < current RSI)
             — this confirms the reversal rather than catching a falling knife.
+            ADDED: price must also have touched the Bollinger lower band on
+            the dip (dual-confirmation reduces false signals significantly).
+            ADDED: bounce candle volume ≥ 1.2× 20-bar average (confirms
+            buyers stepped in, not just a dead-cat bounce on low volume).
   Exit   :
     • Stop loss   : Entry price - (1.5 × ATR)
     • Target      : RSI reaches 60 OR price + (2 × ATR)
@@ -63,16 +67,28 @@ class RSIReversalBot(BaseStrategy):
         df = self.market_data.add_rsi(df, RSI_PERIOD)
         df = self.market_data.add_ema(df, [50])
         df = self.market_data.add_atr(df)
+        df = self.market_data.add_bollinger(df)
 
         last = df.iloc[-1]
         prev = df.iloc[-2]
 
-        # Conditions
+        # Core conditions (unchanged)
         uptrend       = last["close"] > last["ema_50"]
         rsi_was_below = prev["rsi"] < RSI_OVERSOLD
-        rsi_turning   = last["rsi"] > prev["rsi"]    # RSI starting to recover
+        rsi_turning   = last["rsi"] > prev["rsi"]   # RSI starting to recover
 
-        if not (uptrend and rsi_was_below and rsi_turning):
+        # ADDED: Bollinger lower-band touch on the dip candle (dual confirmation)
+        bb_lower_col = "BBL_20_2.0"
+        bb_touched = (
+            bb_lower_col in df.columns and
+            prev["low"] <= prev[bb_lower_col]
+        )
+
+        # ADDED: Volume on the bounce candle must be above average
+        avg_vol  = df["volume"].rolling(20).mean().iloc[-1]
+        vol_ok   = last["volume"] >= avg_vol * 1.2 if avg_vol > 0 else False
+
+        if not (uptrend and rsi_was_below and rsi_turning and bb_touched and vol_ok):
             return
 
         entry_price  = last["close"]
