@@ -1,26 +1,10 @@
-"""
-Zerodha KiteConnect Session Manager.
-
-Authentication strategy (proven from live debug output):
-  After a successful TOTP submission Zerodha sets an `enctoken` cookie.
-  This token authenticates ALL Kite API calls via:
-    Authorization: enctoken <token>
-
-  KiteEncTokenWrapper is a drop-in for KiteConnect that uses this header.
-  OAuth access_token is kept as a fallback only.
-"""
-import os
-import json
-import pyotp
-import requests
+import os, json, pyotp, requests
 from datetime import date, datetime
 from urllib.parse import urlparse, parse_qs
 from kiteconnect import KiteConnect
-
 from config.settings import (
     ZERODHA_API_KEY, ZERODHA_API_SECRET,
-    ZERODHA_USER_ID, ZERODHA_PASSWORD, ZERODHA_TOTP_SECRET,
-    LOG_DIR,
+    ZERODHA_USER_ID, ZERODHA_PASSWORD, ZERODHA_TOTP_SECRET, LOG_DIR,
 )
 from utils.logger import setup_logger
 
@@ -31,7 +15,6 @@ TOKEN_FILE = os.path.join(LOG_DIR, "session_token.json")
 class KiteEncTokenWrapper:
     """Drop-in replacement for KiteConnect using enctoken authentication."""
     BASE = "https://api.kite.trade"
-
     TRANSACTION_TYPE_BUY  = "BUY"
     TRANSACTION_TYPE_SELL = "SELL"
     PRODUCT_MIS           = "MIS"
@@ -43,7 +26,7 @@ class KiteEncTokenWrapper:
     EXCHANGE_NSE          = "NSE"
     EXCHANGE_BSE          = "BSE"
 
-    def __init__(self, api_key: str, enctoken: str):
+    def __init__(self, api_key, enctoken):
         self.api_key = api_key
         self._enctoken = enctoken
         self._sess = requests.Session()
@@ -123,7 +106,7 @@ class KiteEncTokenWrapper:
         return self._get("/portfolio/positions")["data"]
 
     def set_access_token(self, token):
-        pass  # no-op
+        pass
 
     def _get(self, path, params=None):
         r = self._sess.get(f"{self.BASE}{path}", params=params, timeout=15)
@@ -184,7 +167,6 @@ class SessionManager:
             except ValueError:
                 pass
 
-        # enctoken is always set in cookies after successful TOTP
         enctoken = r2.cookies.get("enctoken") or session.cookies.get("enctoken", "")
 
         if enctoken:
@@ -197,7 +179,6 @@ class SessionManager:
             self._save_token(enctoken, "enctoken")
             return
 
-        # Fallback: OAuth request_token
         location = r2.headers.get("Location", "")
         if location and "request_token" in location:
             request_token = parse_qs(urlparse(location).query)["request_token"][0]
@@ -213,7 +194,7 @@ class SessionManager:
             return
 
         raise RuntimeError(
-            f"Authentication failed: no enctoken or request_token in response.\n"
+            f"Authentication failed: no enctoken or request_token.\n"
             f"TOTP status={r2.status_code}, body={r2.text[:300]}"
         )
 
@@ -256,13 +237,11 @@ class SessionManager:
 
 _session = None
 
-
 def get_session():
     global _session
     if _session is None:
         _session = SessionManager()
     return _session
-
 
 def get_kite():
     return get_session().get_kite()
