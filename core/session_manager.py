@@ -1,4 +1,4 @@
-import os, json, pyotp, requests
+import os, json, re, pyotp, requests
 from datetime import date, datetime
 from urllib.parse import urlparse, parse_qs
 from kiteconnect import KiteConnect
@@ -12,9 +12,44 @@ log = setup_logger("session_manager")
 TOKEN_FILE = os.path.join(LOG_DIR, "session_token.json")
 
 
+def _extract_enctoken(response) -> str:
+    """
+    Robustly extract enctoken from a requests.Response object.
+
+    Zerodha sends all cookies in a single comma-separated Set-Cookie header
+    (non-standard). Also tries urllib3's getlist() for multi-header responses.
+    Falls back to cookie jar as last resort.
+    """
+    # Method 1 — urllib3 raw headers list (handles both single and multi-header)
+    try:
+        for cookie_str in response.raw.headers.getlist("Set-Cookie"):
+            m = re.search(r"enctoken=([^;,\s]+)", cookie_str)
+            if m:
+                return m.group(1).strip()
+    except Exception:
+        pass
+
+    # Method 2 — combined header string (urllib3 1.x / Zerodha single-header format)
+    combined = response.headers.get("Set-Cookie", "")
+    if combined:
+        m = re.search(r"enctoken=([^;,\s]+)", combined)
+        if m:
+            return m.group(1).strip()
+
+    # Method 3 — requests cookie jar
+    token = response.cookies.get("enctoken", "")
+    return token
+
+
 class KiteEncTokenWrapper:
-    """Drop-in replacement for KiteConnect using enctoken authentication."""
-    BASE = "https://api.kite.trade"
+    """
+    Drop-in replacement for KiteConnect that uses Zerodha web enctoken.
+
+    Targets kite.zerodha.com (the web API) since the enctoken is issued
+    by the web login flow, NOT the paid KiteConnect API (api.kite.trade).
+    """
+    BASE = "https://kite.zerodha.com"
+
     TRANSACTION_TYPE_BUY  = "BUY"
     TRANSACTION_TYPE_SELL = "SELL"
     PRODUCT_MIS           = "MIS"
@@ -30,26 +65,30 @@ class KiteEncTokenWrapper:
         self.api_key = api_key
         self._enctoken = enctoken
         self._sess = requests.Session()
+        # Set enctoken as both Authorization header AND cookie
         self._sess.headers.update({
             "X-Kite-Version": "3",
-            "Authorization": f"enctoken {enctoken}",
+            "Authorization":  f"enctoken {enctoken}",
         })
+        self._sess.cookies.set("enctoken", enctoken, domain="kite.zerodha.com")
+
+    # ── API methods ───────────────────────────────────────────────────────────
 
     def profile(self):
-        return self._get("/user/profile")["data"]
+        return self._get("/api/user/profile")["data"]
 
     def margins(self, segment=None):
-        path = f"/user/margins/{segment}" if segment else "/user/margins"
+        path = f"/api/user/margins/{segment}" if segment else "/api/user/margins"
         return self._get(path)["data"]
 
     def ltp(self, instruments):
-        return self._get("/quote/ltp", params={"i": instruments})["data"]
+        return self._get("/api/quote/ltp", params={"i": instruments})["data"]
 
     def quote(self, instruments):
-        return self._get("/quote", params={"i": instruments})["data"]
+        return self._get("/api/quote", params={"i": instruments})["data"]
 
     def instruments(self, exchange=None):
-        path = f"/instruments/{exchange}" if exchange else "/instruments"
+        path = f"/api/instruments/{exchange}" if exchange else "/api/instruments"
         r = self._sess.get(f"{self.BASE}{path}", timeout=30)
         r.raise_for_status()
         import csv, io
@@ -72,7 +111,7 @@ class KiteEncTokenWrapper:
             "continuous": int(continuous), "oi": int(oi),
         }
         candles = self._get(
-            f"/instruments/historical/{instrument_token}/{interval}", params=params
+            f"/api/instruments/historical/{instrument_token}/{interval}", params=params
         )["data"]["candles"]
         result = []
         for c in candles:
@@ -97,16 +136,18 @@ class KiteEncTokenWrapper:
         if price:         data["price"] = price
         if trigger_price: data["trigger_price"] = trigger_price
         if tag:           data["tag"] = tag
-        return str(self._post(f"/orders/{variety}", data=data)["data"]["order_id"])
+        return str(self._post(f"/api/orders/{variety}", data=data)["data"]["order_id"])
 
     def orders(self):
-        return self._get("/orders")["data"]
+        return self._get("/api/orders")["data"]
 
     def positions(self):
-        return self._get("/portfolio/positions")["data"]
+        return self._get("/api/portfolio/positions")["data"]
 
     def set_access_token(self, token):
         pass
+
+    # ── Internal helpers ──────────────────────────────────────────────────────
 
     def _get(self, path, params=None):
         r = self._sess.get(f"{self.BASE}{path}", params=params, timeout=15)
@@ -120,11 +161,11 @@ class KiteEncTokenWrapper:
 
     @staticmethod
     def _check(r):
-        if r.status_code != 200:
+        if r.status_code not in (200, 201):
             try:
-                msg = r.json().get("message", r.text[:200])
+                msg = r.json().get("message", r.text[:300])
             except Exception:
-                msg = r.text[:200]
+                msg = r.text[:300]
             raise RuntimeError(f"Kite API {r.status_code}: {msg}")
 
 
@@ -143,6 +184,7 @@ class SessionManager:
         log.info("Starting Zerodha authentication...")
         session = requests.Session()
 
+        # ── Step 1: Password login ────────────────────────────────────────────
         r1 = session.post("https://kite.zerodha.com/api/login", data={
             "user_id": ZERODHA_USER_ID, "password": ZERODHA_PASSWORD,
         }, timeout=15)
@@ -153,12 +195,16 @@ class SessionManager:
         request_id = login_data["data"]["request_id"]
         log.info("Password accepted, submitting TOTP...")
 
+        # ── Step 2: TOTP ──────────────────────────────────────────────────────
         totp_code = pyotp.TOTP(ZERODHA_TOTP_SECRET).now()
         r2 = session.post("https://kite.zerodha.com/api/twofa", data={
-            "user_id": ZERODHA_USER_ID, "request_id": request_id,
-            "twofa_value": totp_code, "twofa_type": "totp",
+            "user_id":     ZERODHA_USER_ID,
+            "request_id":  request_id,
+            "twofa_value": totp_code,
+            "twofa_type":  "totp",
         }, timeout=15, allow_redirects=False)
 
+        # Check if TOTP was rejected
         if r2.status_code == 200:
             try:
                 body = r2.json()
@@ -167,13 +213,17 @@ class SessionManager:
             except ValueError:
                 pass
 
-        import re
-        raw_set_cookie = r2.headers.get("Set-Cookie", "")
-        _m = re.search(r"enctoken=([^;,]+)", raw_set_cookie)
-        enctoken = _m.group(1) if _m else ""
+        # ── Extract enctoken (triple-fallback method) ─────────────────────────
+        enctoken = _extract_enctoken(r2)
+        if not enctoken:
+            # Also try from session cookies (populated after any redirect)
+            enctoken = session.cookies.get("enctoken", "")
+
+        log.info(f"TOTP response: status={r2.status_code}, "
+                 f"enctoken={'FOUND (' + enctoken[:8] + '...)' if enctoken else 'NOT FOUND'}")
 
         if enctoken:
-            log.info("enctoken received - authenticating via enctoken.")
+            log.info("Authenticating via enctoken on kite.zerodha.com...")
             self._kite = KiteEncTokenWrapper(ZERODHA_API_KEY, enctoken)
             profile = self._kite.profile()
             log.info(f"Logged in as: {profile.get('user_name')} ({profile.get('user_id')})")
@@ -182,6 +232,7 @@ class SessionManager:
             self._save_token(enctoken, "enctoken")
             return
 
+        # ── Fallback: OAuth redirect (KiteConnect paid API) ───────────────────
         location = r2.headers.get("Location", "")
         if location and "request_token" in location:
             request_token = parse_qs(urlparse(location).query)["request_token"][0]
@@ -196,9 +247,12 @@ class SessionManager:
             log.info("Authenticated via OAuth access_token.")
             return
 
+        # ── All methods failed ────────────────────────────────────────────────
         raise RuntimeError(
-            f"Authentication failed: no enctoken or request_token.\n"
-            f"TOTP status={r2.status_code}, body={r2.text[:300]}"
+            f"Authentication failed: could not obtain enctoken or request_token.\n"
+            f"TOTP HTTP status={r2.status_code}\n"
+            f"Set-Cookie header: {r2.headers.get('Set-Cookie', '(empty)')[:200]}\n"
+            f"Response body: {r2.text[:200]}"
         )
 
     def _save_token(self, token, token_type):
