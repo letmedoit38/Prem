@@ -39,10 +39,12 @@ INFO  = f"{BLUE}  [INFO]{RESET}"
 WARN  = f"{YELLOW}  [WARN]{RESET}"
 
 
+_LINE = "\u2500" * 55
+
 def header(title):
-    print(f"\n{BOLD}{'\u2500'*55}")
+    print(f"\n{BOLD}{_LINE}")
     print(f"  {title}")
-    print(f"{'\u2500'*55}{RESET}")
+    print(f"{_LINE}{RESET}")
 
 
 def main():
