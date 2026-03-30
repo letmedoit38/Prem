@@ -34,7 +34,7 @@ TIMEZONE           = "Asia/Kolkata"
 # NSE:SYMBOL  – highly liquid, low spread instruments suitable for ₹5k capital
 MOMENTUM_BOT_SYMBOLS  = ["NSE:RELIANCE", "NSE:INFY", "NSE:TCS"]
 RSI_BOT_SYMBOLS       = ["NSE:HDFCBANK", "NSE:ICICIBANK", "NSE:SBIN"]
-VWAP_BOT_SYMBOLS      = ["NSE:NIFTY 50", "NSE:BANKNIFTY"]   # Indices via futures/ETF
+VWAP_BOT_SYMBOLS      = ["NSE:NIFTYBEES", "NSE:BANKBEES"]   # Nifty/BankNifty ETFs (liquid, no F&O margin)
 
 # ── Strategy parameters ──────────────────────────────────────────────────────
 # Bot 1 – EMA Crossover Momentum

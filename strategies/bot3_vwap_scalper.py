@@ -80,7 +80,10 @@ class VWAPScalperBot(BaseStrategy):
         ist = pytz.timezone(TIMEZONE)
         today = datetime.now(ist).date()
         df.index = pd.to_datetime(df.index)
-        df = df[df.index.tz_localize(None).normalize() == pd.Timestamp(today)]
+        # Handle both tz-aware and tz-naive DatetimeIndex
+        naive_index = (df.index.tz_convert(None) if df.index.tz is not None
+                       else df.index)
+        df = df[naive_index.normalize() == pd.Timestamp(today)]
 
         if len(df) < 10:
             return
