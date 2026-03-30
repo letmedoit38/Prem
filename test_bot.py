@@ -20,7 +20,7 @@ import os
 from datetime import datetime
 import pytz
 
-# ── Colour helpers for Windows ────────────────────────────────────────────────
+# ── Colour helpers for Windows ──────────────────────────────────────────────────────────
 try:
     import colorama
     colorama.init()
@@ -40,9 +40,9 @@ WARN  = f"{YELLOW}  [WARN]{RESET}"
 
 
 def header(title):
-    print(f"\n{BOLD}{'─'*55}")
+    print(f"\n{BOLD}{'\u2500'*55}")
     print(f"  {title}")
-    print(f"{'─'*55}{RESET}")
+    print(f"{'\u2500'*55}{RESET}")
 
 
 def main():
@@ -52,12 +52,12 @@ def main():
     print("   PREM TRADING BOT — Safe Test Runner")
     print(f"{'='*55}{RESET}\n")
 
-    # ── Test 1: Dependencies ──────────────────────────────────────────────────
+    # ── Test 1: Dependencies ───────────────────────────────────────────────────────
     header("1. Checking Python dependencies")
     packages = [
         ("kiteconnect",  "kiteconnect"),
         ("pandas",       "pandas"),
-        ("numpy",        "numpy"),  # pandas_ta replaced with built-in numpy/pandas indicators
+        ("numpy",        "numpy"),
         ("pyotp",        "pyotp"),
         ("APScheduler",  "apscheduler"),
         ("python-dotenv","dotenv"),
@@ -73,7 +73,7 @@ def main():
             print(f"{FAIL}  {display}  ← run: pip install {display}")
             errors += 1
 
-    # ── Test 2: .env file ────────────────────────────────────────────────────
+    # ── Test 2: .env file ────────────────────────────────────────────────────────
     header("2. Checking .env credentials file")
     if not os.path.exists(".env"):
         print(f"{FAIL}  .env file not found")
@@ -99,7 +99,7 @@ def main():
         print(f"\n{RED}Fix the above issues first, then re-run this script.{RESET}\n")
         sys.exit(1)
 
-    # ── Test 3: Zerodha authentication ───────────────────────────────────────
+    # ── Test 3: Zerodha authentication ───────────────────────────────────────────
     header("3. Testing Zerodha authentication")
     try:
         from core.session_manager import get_kite
@@ -114,7 +114,7 @@ def main():
         print(f"{INFO}  Check your API key, secret, user ID, password, and TOTP secret.")
         sys.exit(1)
 
-    # ── Test 4: Funds check ───────────────────────────────────────────────────
+    # ── Test 4: Funds check ──────────────────────────────────────────────────────
     header("4. Checking account funds")
     try:
         margins = kite.margins()
@@ -133,7 +133,7 @@ def main():
     except Exception as e:
         print(f"{WARN}  Could not fetch margins: {e}")
 
-    # ── Test 5: Live market data ──────────────────────────────────────────────
+    # ── Test 5: Live market data ──────────────────────────────────────────────────
     header("5. Testing live market data")
     from data.market_data import MarketData
     md = MarketData(kite)
@@ -150,7 +150,7 @@ def main():
         print(f"{FAIL}  Market data error: {e}")
         errors += 1
 
-    # ── Test 6: Historical data + indicators ─────────────────────────────────
+    # ── Test 6: Historical data + indicators ───────────────────────────────────
     header("6. Testing historical candles & indicators")
     try:
         df = md.get_candles("NSE:RELIANCE", interval="5minute", lookback_days=3)
@@ -172,7 +172,7 @@ def main():
         print(f"{FAIL}  Indicator error: {e}")
         errors += 1
 
-    # ── Test 7: Bot dry run ───────────────────────────────────────────────────
+    # ── Test 7: Bot dry run ──────────────────────────────────────────────────────
     header("7. Bot signal scan — DRY RUN (no real orders)")
     print(f"{INFO}  Scanning for signals on all bot instruments…\n")
 
@@ -216,7 +216,7 @@ def main():
         print(f"\n{INFO}  No signals right now — this is normal. Signals appear during market hours.")
     print(f"{PASS}  Dry run complete. Zero real orders were placed.")
 
-    # ── Test 8: Risk manager ──────────────────────────────────────────────────
+    # ── Test 8: Risk manager ──────────────────────────────────────────────────────
     header("8. Testing risk manager")
     from core.risk_manager import RiskManager
     from config.settings import TOTAL_CAPITAL, DAILY_LOSS_LIMIT
@@ -228,7 +228,7 @@ def main():
     assert rm.can_trade("test") is True
     print(f"{PASS}  can_trade() returns True (all clear)")
 
-    # ── Test 9: Market calendar ───────────────────────────────────────────────
+    # ── Test 9: Market calendar ───────────────────────────────────────────────────
     header("9. Market calendar check")
     from scheduler.market_calendar import is_market_open_today, next_trading_day
     ist      = pytz.timezone("Asia/Kolkata")
@@ -248,7 +248,7 @@ def main():
         print(f"{WARN}  Today is NOT a trading day (weekend or holiday)")
     print(f"{INFO}  Next trading day : {next_day}")
 
-    # ── Final result ──────────────────────────────────────────────────────────
+    # ── Final result ───────────────────────────────────────────────────────────
     print(f"\n{'='*55}")
     if errors == 0:
         print(f"{GREEN}{BOLD}  ALL TESTS PASSED — Bot is ready to run!{RESET}")

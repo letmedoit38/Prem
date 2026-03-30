@@ -20,7 +20,7 @@ from utils.logger import setup_logger
 log = setup_logger("market_data")
 
 
-# ── Pure-pandas/numpy indicator functions ─────────────────────────────────────
+# ── Pure-pandas/numpy indicator functions ─────────────────────────────────────────────
 
 def _ema(series: pd.Series, length: int) -> pd.Series:
     return series.ewm(span=length, adjust=False).mean()
@@ -82,7 +82,7 @@ def _bbands(series: pd.Series, length: int = 20, std: float = 2.0):
     }, index=series.index)
 
 
-# ── MarketData class ──────────────────────────────────────────────────────────
+# ── MarketData class ───────────────────────────────────────────────────────────
 
 class MarketData:
     """
@@ -94,7 +94,7 @@ class MarketData:
         self.kite = kite
         self._instrument_cache: dict = {}
 
-    # ── Instrument token ──────────────────────────────────────────────────────
+    # ── Instrument token ───────────────────────────────────────────────────────
 
     def get_instrument_token(self, tradingsymbol: str, exchange: str = "NSE") -> int:
         """Return the numeric instrument token for a symbol."""
@@ -109,7 +109,7 @@ class MarketData:
                 return inst["instrument_token"]
         raise ValueError(f"Instrument not found: {key}")
 
-    # ── Historical OHLCV ──────────────────────────────────────────────────────
+    # ── Historical OHLCV ───────────────────────────────────────────────────────
 
     def get_candles(
         self,
@@ -141,7 +141,7 @@ class MarketData:
             log.error(f"Failed to fetch candles for {symbol}: {e}")
             return pd.DataFrame()
 
-    # ── Real-time quotes ──────────────────────────────────────────────────────
+    # ── Real-time quotes ─────────────────────────────────────────────────────
 
     def get_ltp(self, symbols: List[str]) -> dict:
         """Return {symbol: ltp} for a list of 'EXCHANGE:SYMBOL' strings."""
