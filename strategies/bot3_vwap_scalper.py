@@ -54,7 +54,7 @@ class VWAPScalperBot(BaseStrategy):
         self.market_data = MarketData(kite)
         self._candles_held: dict = {}   # order_id → candle count since entry
 
-    # ── Entry scan ─────────────────────────────────────────────────────────────
+    # ── Entry scan ───────────────────────────────────────────────────────
 
     def scan(self) -> None:
         if not self.risk.can_trade(self.name):
