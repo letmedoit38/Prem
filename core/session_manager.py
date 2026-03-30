@@ -72,7 +72,7 @@ class KiteEncTokenWrapper:
         })
         self._sess.cookies.set("enctoken", enctoken, domain="kite.zerodha.com")
 
-    # ── API methods ───────────────────────────────────────────────────────────
+    # ── API methods ─────────────────────────────────────────────────────
 
     def profile(self):
         return self._get("/api/user/profile")["data"]
@@ -147,7 +147,7 @@ class KiteEncTokenWrapper:
     def set_access_token(self, token):
         pass
 
-    # ── Internal helpers ──────────────────────────────────────────────────────
+    # ── Internal helpers ─────────────────────────────────────────────────────
 
     def _get(self, path, params=None):
         r = self._sess.get(f"{self.BASE}{path}", params=params, timeout=15)
@@ -184,7 +184,7 @@ class SessionManager:
         log.info("Starting Zerodha authentication...")
         session = requests.Session()
 
-        # ── Step 1: Password login ────────────────────────────────────────────
+        # ── Step 1: Password login ───────────────────────────────────────────
         r1 = session.post("https://kite.zerodha.com/api/login", data={
             "user_id": ZERODHA_USER_ID, "password": ZERODHA_PASSWORD,
         }, timeout=15)
@@ -195,7 +195,7 @@ class SessionManager:
         request_id = login_data["data"]["request_id"]
         log.info("Password accepted, submitting TOTP...")
 
-        # ── Step 2: TOTP ──────────────────────────────────────────────────────
+        # ── Step 2: TOTP ─────────────────────────────────────────────────────
         totp_code = pyotp.TOTP(ZERODHA_TOTP_SECRET).now()
         r2 = session.post("https://kite.zerodha.com/api/twofa", data={
             "user_id":     ZERODHA_USER_ID,
@@ -213,7 +213,7 @@ class SessionManager:
             except ValueError:
                 pass
 
-        # ── Extract enctoken (triple-fallback method) ─────────────────────────
+        # ── Extract enctoken (triple-fallback method) ──────────────────────────────
         enctoken = _extract_enctoken(r2)
         if not enctoken:
             # Also try from session cookies (populated after any redirect)
@@ -232,7 +232,7 @@ class SessionManager:
             self._save_token(enctoken, "enctoken")
             return
 
-        # ── Fallback: OAuth redirect (KiteConnect paid API) ───────────────────
+        # ── Fallback: OAuth redirect (KiteConnect paid API) ───────────────────────
         location = r2.headers.get("Location", "")
         if location and "request_token" in location:
             request_token = parse_qs(urlparse(location).query)["request_token"][0]
@@ -247,7 +247,7 @@ class SessionManager:
             log.info("Authenticated via OAuth access_token.")
             return
 
-        # ── All methods failed ────────────────────────────────────────────────
+        # ── All methods failed ───────────────────────────────────────────────────────────
         raise RuntimeError(
             f"Authentication failed: could not obtain enctoken or request_token.\n"
             f"TOTP HTTP status={r2.status_code}\n"
