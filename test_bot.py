@@ -57,8 +57,7 @@ def main():
     packages = [
         ("kiteconnect",  "kiteconnect"),
         ("pandas",       "pandas"),
-        ("pandas_ta",    "pandas_ta"),
-        ("numpy",        "numpy"),
+        ("numpy",        "numpy"),  # pandas_ta replaced with built-in numpy/pandas indicators
         ("pyotp",        "pyotp"),
         ("APScheduler",  "apscheduler"),
         ("python-dotenv","dotenv"),
