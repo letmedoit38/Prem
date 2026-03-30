@@ -167,7 +167,10 @@ class SessionManager:
             except ValueError:
                 pass
 
-        enctoken = r2.cookies.get("enctoken") or session.cookies.get("enctoken", "")
+        import re
+        raw_set_cookie = r2.headers.get("Set-Cookie", "")
+        _m = re.search(r"enctoken=([^;,]+)", raw_set_cookie)
+        enctoken = _m.group(1) if _m else ""
 
         if enctoken:
             log.info("enctoken received - authenticating via enctoken.")
