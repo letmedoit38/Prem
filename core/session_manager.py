@@ -11,34 +11,46 @@ from utils.logger import setup_logger
 log = setup_logger("session_manager")
 TOKEN_FILE = os.path.join(LOG_DIR, "session_token.json")
 
+_COOKIE_NAMES = ["user_id", "public_token", "enctoken"]
 
-def _extract_enctoken(response) -> str:
-    """
-    Robustly extract enctoken from a requests.Response object.
 
-    Zerodha sends all cookies in a single comma-separated Set-Cookie header
-    (non-standard). Also tries urllib3's getlist() for multi-header responses.
-    Falls back to cookie jar as last resort.
+def _extract_cookies(response) -> dict:
     """
-    # Method 1 — urllib3 raw headers list (handles both single and multi-header)
+    Extract user_id, public_token, enctoken from a requests.Response.
+    kite.zerodha.com requires all 3 cookies for authenticated requests.
+    Tries urllib3 getlist(), combined header string, then cookie jar.
+    """
+    found = {}
+    patterns = {n: re.compile(rf"{n}=([^;,\s]+)") for n in _COOKIE_NAMES}
+
+    # Method 1 — per-cookie via urllib3 raw header list
     try:
         for cookie_str in response.raw.headers.getlist("Set-Cookie"):
-            m = re.search(r"enctoken=([^;,\s]+)", cookie_str)
-            if m:
-                return m.group(1).strip()
+            for name, pat in patterns.items():
+                if name not in found:
+                    m = pat.search(cookie_str)
+                    if m:
+                        found[name] = m.group(1).strip()
     except Exception:
         pass
 
-    # Method 2 — combined header string (urllib3 1.x / Zerodha single-header format)
-    combined = response.headers.get("Set-Cookie", "")
-    if combined:
-        m = re.search(r"enctoken=([^;,\s]+)", combined)
-        if m:
-            return m.group(1).strip()
+    # Method 2 — combined Set-Cookie string
+    if len(found) < len(_COOKIE_NAMES):
+        combined = response.headers.get("Set-Cookie", "")
+        for name, pat in patterns.items():
+            if name not in found:
+                m = pat.search(combined)
+                if m:
+                    found[name] = m.group(1).strip()
 
     # Method 3 — requests cookie jar
-    token = response.cookies.get("enctoken", "")
-    return token
+    for name in _COOKIE_NAMES:
+        if name not in found:
+            val = response.cookies.get(name, "")
+            if val:
+                found[name] = val
+
+    return found
 
 
 class KiteEncTokenWrapper:
@@ -61,16 +73,20 @@ class KiteEncTokenWrapper:
     EXCHANGE_NSE          = "NSE"
     EXCHANGE_BSE          = "BSE"
 
-    def __init__(self, api_key, enctoken):
-        self.api_key = api_key
-        self._enctoken = enctoken
-        self._sess = requests.Session()
-        # Set enctoken as both Authorization header AND cookie
+    def __init__(self, api_key, enctoken, user_id="", public_token=""):
+        self.api_key    = api_key
+        self._enctoken  = enctoken
+        self._sess      = requests.Session()
+        # kite.zerodha.com requires all 3 cookies + Authorization header
         self._sess.headers.update({
             "X-Kite-Version": "3",
             "Authorization":  f"enctoken {enctoken}",
         })
-        self._sess.cookies.set("enctoken", enctoken, domain="kite.zerodha.com")
+        if user_id:
+            self._sess.cookies.set("user_id",      user_id,      domain="kite.zerodha.com")
+        if public_token:
+            self._sess.cookies.set("public_token", public_token, domain=".zerodha.com")
+        self._sess.cookies.set("enctoken",         enctoken,     domain="kite.zerodha.com")
 
     # ── API methods ─────────────────────────────────────────────────────
 
@@ -213,23 +229,34 @@ class SessionManager:
             except ValueError:
                 pass
 
-        # ── Extract enctoken (triple-fallback method) ──────────────────────────────
-        enctoken = _extract_enctoken(r2)
-        if not enctoken:
-            # Also try from session cookies (populated after any redirect)
-            enctoken = session.cookies.get("enctoken", "")
+        # ── Extract all 3 session cookies ────────────────────────────────────
+        cookies = _extract_cookies(r2)
+        for name in _COOKIE_NAMES:
+            if name not in cookies and session.cookies.get(name):
+                cookies[name] = session.cookies.get(name)
 
-        log.info(f"TOTP response: status={r2.status_code}, "
-                 f"enctoken={'FOUND (' + enctoken[:8] + '...)' if enctoken else 'NOT FOUND'}")
+        enctoken     = cookies.get("enctoken", "")
+        user_id      = cookies.get("user_id", "")
+        public_token = cookies.get("public_token", "")
+
+        log.info(
+            f"TOTP status={r2.status_code} | "
+            f"enctoken={'YES (' + enctoken[:8] + '...)' if enctoken else 'MISSING'} | "
+            f"user_id={'YES' if user_id else 'MISSING'} | "
+            f"public_token={'YES' if public_token else 'MISSING'}"
+        )
 
         if enctoken:
-            log.info("Authenticating via enctoken on kite.zerodha.com...")
-            self._kite = KiteEncTokenWrapper(ZERODHA_API_KEY, enctoken)
+            log.info("Building Kite session with all 3 cookies...")
+            self._kite = KiteEncTokenWrapper(
+                ZERODHA_API_KEY, enctoken, user_id, public_token
+            )
             profile = self._kite.profile()
             log.info(f"Logged in as: {profile.get('user_name')} ({profile.get('user_id')})")
-            self._token = enctoken
+            self._token      = enctoken
             self._token_type = "enctoken"
-            self._save_token(enctoken, "enctoken")
+            self._save_token({"enctoken": enctoken, "user_id": user_id,
+                              "public_token": public_token}, "enctoken")
             return
 
         # ── Fallback: OAuth redirect (KiteConnect paid API) ───────────────────────
@@ -255,40 +282,51 @@ class SessionManager:
             f"Response body: {r2.text[:200]}"
         )
 
-    def _save_token(self, token, token_type):
+    def _save_token(self, token_data, token_type):
         os.makedirs(LOG_DIR, exist_ok=True)
+        payload = {"date": str(date.today()), "type": token_type}
+        if isinstance(token_data, dict):
+            payload.update(token_data)       # saves enctoken + user_id + public_token
+        else:
+            payload["token"] = token_data
         with open(TOKEN_FILE, "w") as f:
-            json.dump({"date": str(date.today()), "token": token, "type": token_type}, f)
+            json.dump(payload, f)
 
     def _load_token(self):
         if not os.path.exists(TOKEN_FILE):
-            return None, "enctoken"
+            return None
         with open(TOKEN_FILE) as f:
             data = json.load(f)
-        if data.get("date") == str(date.today()):
-            return data.get("token"), data.get("type", "enctoken")
-        return None, "enctoken"
+        if data.get("date") != str(date.today()):
+            return None
+        return data
 
     def _is_token_valid(self):
         if self._kite and self._token:
             return True
-        token, token_type = self._load_token()
-        if not token:
+        data = self._load_token()
+        if not data:
             return False
         try:
+            token_type = data.get("type", "enctoken")
             if token_type == "enctoken":
-                kite = KiteEncTokenWrapper(ZERODHA_API_KEY, token)
+                enctoken     = data.get("enctoken", "")
+                user_id      = data.get("user_id", "")
+                public_token = data.get("public_token", "")
+                if not enctoken:
+                    return False
+                kite = KiteEncTokenWrapper(ZERODHA_API_KEY, enctoken, user_id, public_token)
             else:
                 kite = KiteConnect(api_key=ZERODHA_API_KEY)
-                kite.set_access_token(token)
+                kite.set_access_token(data.get("token", ""))
             kite.profile()
-            self._kite = kite
-            self._token = token
+            self._kite       = kite
+            self._token      = data.get("enctoken") or data.get("token", "")
             self._token_type = token_type
             log.info(f"Loaded cached {token_type} for today.")
             return True
         except Exception:
-            log.warning("Cached token invalid, re-authenticating...")
+            log.warning("Cached token invalid — re-authenticating...")
             return False
 
 
