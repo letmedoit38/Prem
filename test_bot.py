@@ -123,14 +123,14 @@ def main():
         equity  = margins.get("equity", {})
         net     = equity.get("net", 0)
         avail   = equity.get("available", {}).get("live_balance", 0)
-        print(f"{PASS}  Equity Net Balance  : ₹{net:,.2f}")
-        print(f"{INFO}  Available for trading: ₹{avail:,.2f}")
+        print(f"{PASS}  Equity Net Balance  : \u20b9{net:,.2f}")
+        print(f"{INFO}  Available for trading: \u20b9{avail:,.2f}")
 
         from config.settings import TOTAL_CAPITAL
         if avail >= TOTAL_CAPITAL:
-            print(f"{PASS}  Sufficient funds for ₹{TOTAL_CAPITAL:,.0f} capital")
+            print(f"{PASS}  Sufficient funds for \u20b9{TOTAL_CAPITAL:,.0f} capital")
         else:
-            print(f"{WARN}  Available ₹{avail:,.0f} < configured capital ₹{TOTAL_CAPITAL:,.0f}")
+            print(f"{WARN}  Available \u20b9{avail:,.0f} < configured capital \u20b9{TOTAL_CAPITAL:,.0f}")
             print(f"{INFO}  Add funds to your Zerodha account before going live.")
     except Exception as e:
         print(f"{WARN}  Could not fetch margins: {e}")
@@ -145,7 +145,7 @@ def main():
         if prices:
             print(f"{PASS}  Live prices received:")
             for sym, price in prices.items():
-                print(f"{INFO}    {sym}: ₹{price:,.2f}")
+                print(f"{INFO}    {sym}: \u20b9{price:,.2f}")
         else:
             print(f"{WARN}  No prices returned (market may be closed right now)")
     except Exception as e:
@@ -162,12 +162,12 @@ def main():
             df = md.add_rsi(df)
             df = md.add_atr(df)
             last = df.iloc[-1]
-            print(f"{INFO}  Last close : ₹{last['close']:.2f}")
-            print(f"{INFO}  EMA9       : ₹{last['ema_9']:.2f}")
-            print(f"{INFO}  EMA21      : ₹{last['ema_21']:.2f}")
-            print(f"{INFO}  EMA50      : ₹{last['ema_50']:.2f}")
+            print(f"{INFO}  Last close : \u20b9{last['close']:.2f}")
+            print(f"{INFO}  EMA9       : \u20b9{last['ema_9']:.2f}")
+            print(f"{INFO}  EMA21      : \u20b9{last['ema_21']:.2f}")
+            print(f"{INFO}  EMA50      : \u20b9{last['ema_50']:.2f}")
             print(f"{INFO}  RSI(14)    : {last['rsi']:.1f}")
-            print(f"{INFO}  ATR(14)    : ₹{last['atr']:.2f}")
+            print(f"{INFO}  ATR(14)    : \u20b9{last['atr']:.2f}")
         else:
             print(f"{WARN}  No historical data (market may be closed / outside hours)")
     except Exception as e:
@@ -224,9 +224,9 @@ def main():
     from config.settings import TOTAL_CAPITAL, DAILY_LOSS_LIMIT
     rm = RiskManager()
     print(f"{PASS}  Risk manager initialised")
-    print(f"{INFO}  Capital     : ₹{rm.total_capital:,.0f}")
-    print(f"{INFO}  Daily SL    : ₹{rm.daily_loss_limit:,.0f}  (5% of capital)")
-    print(f"{INFO}  Max per trade: ₹{rm.max_trade_value():,.0f}  (40% cap)")
+    print(f"{INFO}  Capital     : \u20b9{rm.total_capital:,.0f}")
+    print(f"{INFO}  Daily SL    : \u20b9{rm.daily_loss_limit:,.0f}  (5% of capital)")
+    print(f"{INFO}  Max per trade: \u20b9{rm.max_trade_value():,.0f}  (40% cap)")
     assert rm.can_trade("test") is True
     print(f"{PASS}  can_trade() returns True (all clear)")
 
