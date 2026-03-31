@@ -59,6 +59,7 @@ class KiteEncTokenWrapper:
 
     Targets kite.zerodha.com (the web API) since the enctoken is issued
     by the web login flow, NOT the paid KiteConnect API (api.kite.trade).
+    Used as fallback when the OAuth /connect/login flow is unavailable.
     """
     BASE = "https://kite.zerodha.com"
 
@@ -189,7 +190,7 @@ class SessionManager:
     def __init__(self):
         self._kite = None
         self._token = None
-        self._token_type = "enctoken"
+        self._token_type = "access_token"
 
     def get_kite(self):
         if not self._is_token_valid():
@@ -197,10 +198,27 @@ class SessionManager:
         return self._kite
 
     def _authenticate(self):
-        log.info("Starting Zerodha authentication...")
+        log.info("Starting Zerodha authentication (KiteConnect OAuth flow)...")
         session = requests.Session()
+        session.headers.update({
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Accept": "application/json, text/plain, */*",
+        })
 
-        # ── Step 1: Password login ───────────────────────────────────────────
+        # ── Step 0: Initiate KiteConnect OAuth context ────────────────────────
+        # This GET tells Zerodha we are doing a KiteConnect flow (not plain web
+        # login).  Without it, /api/twofa returns 200+cookies instead of a 302
+        # redirect with request_token.
+        try:
+            session.get(
+                f"https://kite.zerodha.com/connect/login?v=3&api_key={ZERODHA_API_KEY}",
+                timeout=15,
+            )
+            log.info("KiteConnect OAuth context established via /connect/login.")
+        except Exception as e:
+            log.warning(f"Could not establish OAuth context: {e} — will try web-cookie fallback.")
+
+        # ── Step 1: Password login ──────────────────────────────────────
         r1 = session.post("https://kite.zerodha.com/api/login", data={
             "user_id": ZERODHA_USER_ID, "password": ZERODHA_PASSWORD,
         }, timeout=15)
@@ -211,7 +229,7 @@ class SessionManager:
         request_id = login_data["data"]["request_id"]
         log.info("Password accepted, submitting TOTP...")
 
-        # ── Step 2: TOTP ─────────────────────────────────────────────────────
+        # ── Step 2: TOTP ─────────────────────────────────────────────
         totp_code = pyotp.TOTP(ZERODHA_TOTP_SECRET).now()
         r2 = session.post("https://kite.zerodha.com/api/twofa", data={
             "user_id":     ZERODHA_USER_ID,
@@ -220,7 +238,12 @@ class SessionManager:
             "twofa_type":  "totp",
         }, timeout=15, allow_redirects=False)
 
-        # Check if TOTP was rejected
+        log.info(
+            f"TOTP status={r2.status_code} | "
+            f"Location={r2.headers.get('Location', 'none')[:100]}"
+        )
+
+        # Check if TOTP was rejected (status 200 with error body)
         if r2.status_code == 200:
             try:
                 body = r2.json()
@@ -229,7 +252,30 @@ class SessionManager:
             except ValueError:
                 pass
 
-        # ── Extract all 3 session cookies ────────────────────────────────────
+        # ── Step 3: OAuth path — extract request_token from redirect ──────────
+        # When /connect/login was visited first, /api/twofa responds with a 302
+        # redirect to the registered URL containing request_token.
+        location = r2.headers.get("Location", "")
+        if location and "request_token" in location:
+            request_token = parse_qs(urlparse(location).query).get("request_token", [""])[0]
+            if request_token:
+                log.info(f"request_token obtained ({request_token[:12]}...) — exchanging for access_token.")
+                kite = KiteConnect(api_key=ZERODHA_API_KEY)
+                sess_data = kite.generate_session(request_token, api_secret=ZERODHA_API_SECRET)
+                access_token = sess_data["access_token"]
+                kite.set_access_token(access_token)
+                profile = kite.profile()
+                log.info(f"Logged in as: {profile.get('user_name')} ({profile.get('user_id')})")
+                self._kite       = kite
+                self._token      = access_token
+                self._token_type = "access_token"
+                self._save_token(access_token, "access_token")
+                log.info("Authenticated via KiteConnect access_token (api.kite.trade).")
+                return
+
+        # ── Fallback: web-cookie path (no OAuth context, status 200 + cookies) ─
+        # Happens when /connect/login step was skipped or failed.
+        log.warning("No request_token redirect — falling back to enctoken web session.")
         cookies = _extract_cookies(r2)
         for name in _COOKIE_NAMES:
             if name not in cookies and session.cookies.get(name):
@@ -240,17 +286,13 @@ class SessionManager:
         public_token = cookies.get("public_token", "")
 
         log.info(
-            f"TOTP status={r2.status_code} | "
             f"enctoken={'YES (' + enctoken[:8] + '...)' if enctoken else 'MISSING'} | "
             f"user_id={'YES' if user_id else 'MISSING'} | "
             f"public_token={'YES' if public_token else 'MISSING'}"
         )
 
         if enctoken:
-            log.info("Building Kite session with all 3 cookies...")
-            self._kite = KiteEncTokenWrapper(
-                ZERODHA_API_KEY, enctoken, user_id, public_token
-            )
+            self._kite = KiteEncTokenWrapper(ZERODHA_API_KEY, enctoken, user_id, public_token)
             profile = self._kite.profile()
             log.info(f"Logged in as: {profile.get('user_name')} ({profile.get('user_id')})")
             self._token      = enctoken
@@ -259,27 +301,11 @@ class SessionManager:
                               "public_token": public_token}, "enctoken")
             return
 
-        # ── Fallback: OAuth redirect (KiteConnect paid API) ───────────────────────
-        location = r2.headers.get("Location", "")
-        if location and "request_token" in location:
-            request_token = parse_qs(urlparse(location).query)["request_token"][0]
-            kite = KiteConnect(api_key=ZERODHA_API_KEY)
-            sess_data = kite.generate_session(request_token, api_secret=ZERODHA_API_SECRET)
-            access_token = sess_data["access_token"]
-            kite.set_access_token(access_token)
-            self._kite = kite
-            self._token = access_token
-            self._token_type = "access_token"
-            self._save_token(access_token, "access_token")
-            log.info("Authenticated via OAuth access_token.")
-            return
-
-        # ── All methods failed ───────────────────────────────────────────────────────────
         raise RuntimeError(
-            f"Authentication failed: could not obtain enctoken or request_token.\n"
+            f"Authentication failed: no request_token redirect and no enctoken cookie.\n"
             f"TOTP HTTP status={r2.status_code}\n"
-            f"Set-Cookie header: {r2.headers.get('Set-Cookie', '(empty)')[:200]}\n"
-            f"Response body: {r2.text[:200]}"
+            f"Set-Cookie: {r2.headers.get('Set-Cookie', '(empty)')[:200]}\n"
+            f"Response: {r2.text[:200]}"
         )
 
     def _save_token(self, token_data, token_type):
@@ -308,20 +334,25 @@ class SessionManager:
         if not data:
             return False
         try:
-            token_type = data.get("type", "enctoken")
-            if token_type == "enctoken":
+            token_type = data.get("type", "access_token")
+            if token_type == "access_token":
+                access_token = data.get("token", "")
+                if not access_token:
+                    return False
+                kite = KiteConnect(api_key=ZERODHA_API_KEY)
+                kite.set_access_token(access_token)
+                saved_token = access_token
+            else:  # enctoken fallback
                 enctoken     = data.get("enctoken", "")
                 user_id      = data.get("user_id", "")
                 public_token = data.get("public_token", "")
                 if not enctoken:
                     return False
                 kite = KiteEncTokenWrapper(ZERODHA_API_KEY, enctoken, user_id, public_token)
-            else:
-                kite = KiteConnect(api_key=ZERODHA_API_KEY)
-                kite.set_access_token(data.get("token", ""))
+                saved_token = enctoken
             kite.profile()
             self._kite       = kite
-            self._token      = data.get("enctoken") or data.get("token", "")
+            self._token      = saved_token
             self._token_type = token_type
             log.info(f"Loaded cached {token_type} for today.")
             return True
