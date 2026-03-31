@@ -74,11 +74,17 @@ print(f"  enctoken found: {'YES (' + enctoken[:12] + '...)' if enctoken else 'NO
 print()
 
 # ── STEP 3: Test enctoken directly using the SAME session ────────────────
-print("STEP 3: Test /api/user/profile using authenticated session (reused)")
+# kf_session = Django CSRF token — must be sent as X-CSRFToken header
+csrf_token = session.cookies.get("kf_session") or ""
+print(f"  kf_session (CSRF): {'YES (' + csrf_token[:12] + '...)' if csrf_token else 'MISSING'}")
+print()
+
+print("STEP 3: Test /api/user/profile using authenticated session (reused) + X-CSRFToken")
 session.headers.update({
     "X-Kite-Version": "3",
     "Authorization":  f"enctoken {enctoken}",
     "X-Kite-Userid":  user_id_cookie,
+    "X-CSRFToken":    csrf_token,
     "Referer":        "https://kite.zerodha.com/dashboard",
     "sec-fetch-site": "same-origin",
     "sec-fetch-mode": "cors",
@@ -90,12 +96,13 @@ print(f"  Response: {r3.text[:500]}")
 print()
 
 # ── STEP 4: Test enctoken with a fresh session ────────────────────────────
-print("STEP 4: Test /api/user/profile using FRESH session (manual cookies)")
+print("STEP 4: Test /api/user/profile using FRESH session (manual cookies + X-CSRFToken)")
 fresh = requests.Session()
 fresh.headers.update({
     "X-Kite-Version": "3",
     "Authorization":  f"enctoken {enctoken}",
     "X-Kite-Userid":  user_id_cookie,
+    "X-CSRFToken":    csrf_token,
     "Referer":        "https://kite.zerodha.com/dashboard",
     "sec-fetch-site": "same-origin",
     "sec-fetch-mode": "cors",
@@ -106,8 +113,9 @@ fresh.headers.update({
         "Chrome/120.0.0.0 Safari/537.36"
     ),
 })
-fresh.cookies.set("user_id",   user_id_cookie,                    domain="kite.zerodha.com")
-fresh.cookies.set("enctoken",  enctoken,                           domain="kite.zerodha.com")
+fresh.cookies.set("user_id",    user_id_cookie, domain="kite.zerodha.com")
+fresh.cookies.set("enctoken",   enctoken,        domain="kite.zerodha.com")
+fresh.cookies.set("kf_session", csrf_token,      domain="kite.zerodha.com")
 r4 = fresh.get("https://kite.zerodha.com/api/user/profile", timeout=15)
 print(f"  Status  : {r4.status_code}")
 print(f"  Response: {r4.text[:500]}")

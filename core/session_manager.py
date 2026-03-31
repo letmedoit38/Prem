@@ -75,18 +75,20 @@ class KiteEncTokenWrapper:
     EXCHANGE_BSE          = "BSE"
 
     def __init__(self, api_key, enctoken, user_id="", public_token="",
-                 login_session: requests.Session = None):
+                 login_session: requests.Session = None, csrf_token=""):
         self.api_key   = api_key
         self._enctoken = enctoken
         # Reuse the authenticated login session if provided — it already holds
         # all cookies (including HttpOnly ones we can't extract manually).
         # Otherwise create a fresh session and manually populate cookies.
         self._sess = login_session or requests.Session()
-        # Always (re)set required auth headers on the session
+        # kite.zerodha.com uses Django CSRF protection.
+        # The kf_session cookie value must also be sent as X-CSRFToken header.
         self._sess.headers.update({
             "X-Kite-Version": "3",
             "Authorization":  f"enctoken {enctoken}",
             "X-Kite-Userid":  user_id,
+            "X-CSRFToken":    csrf_token,   # ← REQUIRED: Django CSRF check
             "Referer":        "https://kite.zerodha.com/dashboard",
             "sec-fetch-site": "same-origin",
             "sec-fetch-mode": "cors",
@@ -104,6 +106,8 @@ class KiteEncTokenWrapper:
             if public_token:
                 self._sess.cookies.set("public_token", public_token, domain=".zerodha.com")
             self._sess.cookies.set("enctoken",         enctoken,     domain="kite.zerodha.com")
+            if csrf_token:
+                self._sess.cookies.set("kf_session",   csrf_token,   domain="kite.zerodha.com")
 
     # ── API methods ─────────────────────────────────────────────────────
 
@@ -292,34 +296,45 @@ class SessionManager:
         # ── Fallback: web-cookie path (no OAuth context, status 200 + cookies) ─
         # Happens when /connect/login step was skipped or failed.
         log.warning("No request_token redirect — falling back to enctoken web session.")
-        cookies = _extract_cookies(r2)
-        for name in _COOKIE_NAMES:
-            if name not in cookies and session.cookies.get(name):
-                cookies[name] = session.cookies.get(name)
+        # Collect cookies from the session jar (most reliable source — avoids
+        # HttpOnly parsing issues).
+        enctoken     = session.cookies.get("enctoken",     "")
+        user_id      = session.cookies.get("user_id",      ZERODHA_USER_ID)
+        public_token = session.cookies.get("public_token", "")
+        # kf_session is Zerodha's CSRF token — must be sent as X-CSRFToken header.
+        csrf_token   = session.cookies.get("kf_session",   "")
 
-        enctoken     = cookies.get("enctoken", "")
-        user_id      = cookies.get("user_id", "")
-        public_token = cookies.get("public_token", "")
+        # Fallback to header parsing for any missing values
+        if not enctoken or not csrf_token:
+            parsed = _extract_cookies(r2)
+            if not enctoken:
+                enctoken = parsed.get("enctoken", "")
+            if not user_id:
+                user_id = parsed.get("user_id", ZERODHA_USER_ID)
+            if not public_token:
+                public_token = parsed.get("public_token", "")
 
         log.info(
             f"enctoken={'YES (' + enctoken[:8] + '...)' if enctoken else 'MISSING'} | "
             f"user_id={'YES' if user_id else 'MISSING'} | "
-            f"public_token={'YES' if public_token else 'MISSING'}"
+            f"public_token={'YES' if public_token else 'MISSING'} | "
+            f"csrf_token={'YES (' + csrf_token[:8] + '...)' if csrf_token else 'MISSING'}"
         )
 
         if enctoken:
-            # Pass `session` so the wrapper reuses the fully-authenticated
-            # requests.Session (with all HttpOnly cookies intact).
+            # Pass the original login session (all cookies intact) + csrf_token.
             self._kite = KiteEncTokenWrapper(
                 ZERODHA_API_KEY, enctoken, user_id, public_token,
-                login_session=session,
+                login_session=session, csrf_token=csrf_token,
             )
             profile = self._kite.profile()
             log.info(f"Logged in as: {profile.get('user_name')} ({profile.get('user_id')})")
             self._token      = enctoken
             self._token_type = "enctoken"
-            self._save_token({"enctoken": enctoken, "user_id": user_id,
-                              "public_token": public_token}, "enctoken")
+            self._save_token({
+                "enctoken": enctoken, "user_id": user_id,
+                "public_token": public_token, "csrf_token": csrf_token,
+            }, "enctoken")
             return
 
         raise RuntimeError(
@@ -367,9 +382,13 @@ class SessionManager:
                 enctoken     = data.get("enctoken", "")
                 user_id      = data.get("user_id", "")
                 public_token = data.get("public_token", "")
+                csrf_token   = data.get("csrf_token", "")
                 if not enctoken:
                     return False
-                kite = KiteEncTokenWrapper(ZERODHA_API_KEY, enctoken, user_id, public_token)
+                kite = KiteEncTokenWrapper(
+                    ZERODHA_API_KEY, enctoken, user_id, public_token,
+                    csrf_token=csrf_token,
+                )
                 saved_token = enctoken
             kite.profile()
             self._kite       = kite
