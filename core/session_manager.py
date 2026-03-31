@@ -78,10 +78,23 @@ class KiteEncTokenWrapper:
         self.api_key    = api_key
         self._enctoken  = enctoken
         self._sess      = requests.Session()
-        # kite.zerodha.com requires all 3 cookies + Authorization header
+        # kite.zerodha.com requires:
+        #   - Authorization: enctoken <token>
+        #   - X-Kite-Userid: <user_id>  (server cross-checks token vs user — missing = 403)
+        #   - Browser-like Referer and sec-fetch-* headers (Cloudflare bot detection)
         self._sess.headers.update({
             "X-Kite-Version": "3",
             "Authorization":  f"enctoken {enctoken}",
+            "X-Kite-Userid":  user_id,
+            "Referer":        "https://kite.zerodha.com/dashboard",
+            "sec-fetch-site": "same-origin",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-dest": "empty",
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/120.0.0.0 Safari/537.36"
+            ),
         })
         if user_id:
             self._sess.cookies.set("user_id",      user_id,      domain="kite.zerodha.com")
@@ -256,7 +269,7 @@ class SessionManager:
         # When /connect/login was visited first, /api/twofa responds with a 302
         # redirect to the registered URL containing request_token.
         location = r2.headers.get("Location", "")
-        if location and "request_token" in location:
+        if r2.status_code in (301, 302, 303) and "request_token" in location:
             request_token = parse_qs(urlparse(location).query).get("request_token", [""])[0]
             if request_token:
                 log.info(f"request_token obtained ({request_token[:12]}...) — exchanging for access_token.")
