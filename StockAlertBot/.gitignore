@@ -1,0 +1,8 @@
+.env
+data/seen_news.json
+data/watchlist.json
+logs/
+__pycache__/
+*.pyc
+.venv/
+venv/
