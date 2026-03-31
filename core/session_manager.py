@@ -74,14 +74,15 @@ class KiteEncTokenWrapper:
     EXCHANGE_NSE          = "NSE"
     EXCHANGE_BSE          = "BSE"
 
-    def __init__(self, api_key, enctoken, user_id="", public_token=""):
-        self.api_key    = api_key
-        self._enctoken  = enctoken
-        self._sess      = requests.Session()
-        # kite.zerodha.com requires:
-        #   - Authorization: enctoken <token>
-        #   - X-Kite-Userid: <user_id>  (server cross-checks token vs user — missing = 403)
-        #   - Browser-like Referer and sec-fetch-* headers (Cloudflare bot detection)
+    def __init__(self, api_key, enctoken, user_id="", public_token="",
+                 login_session: requests.Session = None):
+        self.api_key   = api_key
+        self._enctoken = enctoken
+        # Reuse the authenticated login session if provided — it already holds
+        # all cookies (including HttpOnly ones we can't extract manually).
+        # Otherwise create a fresh session and manually populate cookies.
+        self._sess = login_session or requests.Session()
+        # Always (re)set required auth headers on the session
         self._sess.headers.update({
             "X-Kite-Version": "3",
             "Authorization":  f"enctoken {enctoken}",
@@ -96,11 +97,13 @@ class KiteEncTokenWrapper:
                 "Chrome/120.0.0.0 Safari/537.36"
             ),
         })
-        if user_id:
-            self._sess.cookies.set("user_id",      user_id,      domain="kite.zerodha.com")
-        if public_token:
-            self._sess.cookies.set("public_token", public_token, domain=".zerodha.com")
-        self._sess.cookies.set("enctoken",         enctoken,     domain="kite.zerodha.com")
+        if not login_session:
+            # Fresh session — set cookies manually
+            if user_id:
+                self._sess.cookies.set("user_id",      user_id,      domain="kite.zerodha.com")
+            if public_token:
+                self._sess.cookies.set("public_token", public_token, domain=".zerodha.com")
+            self._sess.cookies.set("enctoken",         enctoken,     domain="kite.zerodha.com")
 
     # ── API methods ─────────────────────────────────────────────────────
 
@@ -305,7 +308,12 @@ class SessionManager:
         )
 
         if enctoken:
-            self._kite = KiteEncTokenWrapper(ZERODHA_API_KEY, enctoken, user_id, public_token)
+            # Pass `session` so the wrapper reuses the fully-authenticated
+            # requests.Session (with all HttpOnly cookies intact).
+            self._kite = KiteEncTokenWrapper(
+                ZERODHA_API_KEY, enctoken, user_id, public_token,
+                login_session=session,
+            )
             profile = self._kite.profile()
             log.info(f"Logged in as: {profile.get('user_name')} ({profile.get('user_id')})")
             self._token      = enctoken

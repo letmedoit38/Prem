@@ -18,6 +18,10 @@ print(f"  TOTP now  : {pyotp.TOTP(TOTP_SECRET).now()}")
 print()
 
 session = requests.Session()
+session.headers.update({
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+    "Accept": "application/json, text/plain, */*",
+})
 
 print("STEP 1: POST /api/login")
 r1 = session.post("https://kite.zerodha.com/api/login",
@@ -46,29 +50,73 @@ r2 = session.post("https://kite.zerodha.com/api/twofa",
                   timeout=15, allow_redirects=False)
 
 print(f"  Status  : {r2.status_code}")
-print(f"  Headers : {dict(r2.headers)}")
-print(f"  Response: {r2.text[:1000]}")
+print(f"  Location: {r2.headers.get('Location', '(none)')}")
+print(f"  Response: {r2.text[:500]}")
 print()
 
-print("STEP 2b: POST /api/twofa  (allow_redirects=True, fresh TOTP)")
-import time; time.sleep(2)
-totp_code2 = pyotp.TOTP(TOTP_SECRET).now()
+print(f"  All cookies in session after twofa:")
+for c in session.cookies:
+    print(f"    {c.name}={c.value[:20]}...  domain={c.domain}")
+print()
 
-r1b = session.post("https://kite.zerodha.com/api/login",
-                   data={"user_id": USER_ID, "password": PASSWORD}, timeout=15)
-request_id2 = r1b.json()["data"]["request_id"]
+# Extract enctoken
+enctoken = session.cookies.get("enctoken") or ""
+user_id_cookie = session.cookies.get("user_id") or USER_ID
 
-r2b = session.post("https://kite.zerodha.com/api/twofa",
-                   data={"user_id": USER_ID, "request_id": request_id2,
-                         "twofa_value": totp_code2, "twofa_type": "totp"},
-                   timeout=15, allow_redirects=True)
+if not enctoken:
+    # Try parsing from r2 headers
+    import re
+    m = re.search(r"enctoken=([^;,\s]+)", r2.headers.get("Set-Cookie", ""))
+    if m:
+        enctoken = m.group(1)
 
-print(f"  Status  : {r2b.status_code}")
-print(f"  Final URL: {r2b.url}")
-print(f"  Response: {r2b.text[:500]}")
+print(f"  enctoken found: {'YES (' + enctoken[:12] + '...)' if enctoken else 'NO'}")
+print()
+
+# ── STEP 3: Test enctoken directly using the SAME session ────────────────
+print("STEP 3: Test /api/user/profile using authenticated session (reused)")
+session.headers.update({
+    "X-Kite-Version": "3",
+    "Authorization":  f"enctoken {enctoken}",
+    "X-Kite-Userid":  user_id_cookie,
+    "Referer":        "https://kite.zerodha.com/dashboard",
+    "sec-fetch-site": "same-origin",
+    "sec-fetch-mode": "cors",
+    "sec-fetch-dest": "empty",
+})
+r3 = session.get("https://kite.zerodha.com/api/user/profile", timeout=15)
+print(f"  Status  : {r3.status_code}")
+print(f"  Response: {r3.text[:500]}")
+print()
+
+# ── STEP 4: Test enctoken with a fresh session ────────────────────────────
+print("STEP 4: Test /api/user/profile using FRESH session (manual cookies)")
+fresh = requests.Session()
+fresh.headers.update({
+    "X-Kite-Version": "3",
+    "Authorization":  f"enctoken {enctoken}",
+    "X-Kite-Userid":  user_id_cookie,
+    "Referer":        "https://kite.zerodha.com/dashboard",
+    "sec-fetch-site": "same-origin",
+    "sec-fetch-mode": "cors",
+    "sec-fetch-dest": "empty",
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/120.0.0.0 Safari/537.36"
+    ),
+})
+fresh.cookies.set("user_id",   user_id_cookie,                    domain="kite.zerodha.com")
+fresh.cookies.set("enctoken",  enctoken,                           domain="kite.zerodha.com")
+r4 = fresh.get("https://kite.zerodha.com/api/user/profile", timeout=15)
+print(f"  Status  : {r4.status_code}")
+print(f"  Response: {r4.text[:500]}")
 print()
 
 print("=" * 60)
 print("  Copy ALL output above and share it to fix the auth code.")
+print("  Step 3 = reused session | Step 4 = fresh session")
+print("  If Step 3 passes but Step 4 fails → need to reuse session")
+print("  If both fail → enctoken itself is invalid (re-check credentials)")
 print("=" * 60)
 input("\nPress Enter to exit...")
