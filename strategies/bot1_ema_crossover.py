@@ -7,11 +7,11 @@ Logic:
             20-bar average (confirms institutional participation).
             Session filter: skip the choppy 11:30–13:00 lunch window.
   Exit   :
-    • Stop loss   : Entry price - (1.5 × ATR)
-    • Target      : Entry price + (2.5 × ATR)  [risk:reward ≈ 1:1.67]
-    • Trailing SL : Once price moves 1×ATR in favour, SL trails at
-                    current_price - 1×ATR
-    • Force close : 15:15 IST regardless of position
+    • Hard stop loss : Entry price × (1 - HARD_STOP_LOSS_PCT/100)  [10% below entry]
+    • NO fixed target: profits are uncapped — let winners run as long as possible
+    • Trailing SL    : trails at (current_price - TRAILING_ATR_MULTIPLIER × ATR)
+                       ratchets up as price rises, locks in gains, never moves down
+    • Force close    : 15:15 IST regardless of position
 
 Instruments: highly-liquid large-cap NSE stocks.
 Candle interval: 5 minutes.
@@ -20,7 +20,10 @@ from datetime import datetime, time as dt_time
 
 import pytz
 
-from config.settings import EMA_FAST, EMA_SLOW, EMA_TREND, SQUARE_OFF_TIME, TIMEZONE
+from config.settings import (
+    EMA_FAST, EMA_SLOW, EMA_TREND, SQUARE_OFF_TIME, TIMEZONE,
+    HARD_STOP_LOSS_PCT, TRAILING_ATR_MULTIPLIER,
+)
 from core.risk_manager import Position, get_risk_manager
 from data.market_data import MarketData
 from strategies.base_strategy import BaseStrategy
@@ -91,22 +94,20 @@ class EMACrossoverBot(BaseStrategy):
         if not (crossed_up and above_trend and rsi_ok and vol_ok):
             return
 
-        # Size the position
-        entry_price    = last["close"]
-        stop_loss_px   = round(entry_price - 1.5 * atr, 2)
-        target_px      = round(entry_price + 2.5 * atr, 2)
-        sl_pct         = ((entry_price - stop_loss_px) / entry_price) * 100
-        qty            = self.risk.calculate_position_size(entry_price, sl_pct)
+        # Size the position — hard SL 10%, no fixed target (uncapped profit)
+        entry_price  = last["close"]
+        stop_loss_px = round(entry_price * (1 - HARD_STOP_LOSS_PCT / 100), 2)
+        qty          = self.risk.calculate_position_size(entry_price, HARD_STOP_LOSS_PCT)
 
         if qty < 1:
             return
 
         self.log.info(
             f"SIGNAL | {symbol} | EMA cross-up | "
-            f"Entry: ₹{entry_price:.2f} | SL: ₹{stop_loss_px:.2f} | "
-            f"Target: ₹{target_px:.2f} | Qty: {qty}"
+            f"Entry: ₹{entry_price:.2f} | Hard SL: ₹{stop_loss_px:.2f} (-10%) | "
+            f"Target: UNCAPPED (trailing SL) | Qty: {qty}"
         )
-        self._place_buy(symbol, qty, entry_price, stop_loss_px, target_px)
+        self._place_buy(symbol, qty, entry_price, stop_loss_px, target=None)
 
     # ── Position management ────────────────────────────────────────────────────
 
@@ -128,28 +129,24 @@ class EMACrossoverBot(BaseStrategy):
                     self._place_sell(pos, ltp, reason="EOD_SQUAREOFF")
                     continue
 
-                # Stop loss
+                # Hard stop loss
                 if pos.is_stop_loss_triggered(ltp):
-                    self.log.info(f"SL triggered for {pos.symbol} @ ₹{ltp:.2f}")
+                    self.log.info(f"Hard SL hit: {pos.symbol} @ ₹{ltp:.2f}")
                     self._place_sell(pos, ltp, reason="STOP_LOSS")
                     continue
 
-                # Target hit
-                if pos.is_target_hit(ltp):
-                    self.log.info(f"Target hit for {pos.symbol} @ ₹{ltp:.2f}")
-                    self._place_sell(pos, ltp, reason="TARGET")
-                    continue
-
-                # Trailing stop: once in profit by 1×ATR, trail SL up
+                # No fixed target — trailing SL is the ONLY profit exit
+                # Trail SL upward as price rises; never move it down
                 df = self.market_data.get_candles(pos.symbol, interval="5minute", lookback_days=1)
                 if not df.empty:
                     df = self.market_data.add_atr(df)
                     atr = df.iloc[-1]["atr"]
-                    trail_sl = round(ltp - 1.0 * atr, 2)
+                    trail_sl = round(ltp - TRAILING_ATR_MULTIPLIER * atr, 2)
                     if trail_sl > pos.stop_loss_price:
-                        self.log.debug(
-                            f"Trailing SL for {pos.symbol}: "
-                            f"₹{pos.stop_loss_price:.2f} → ₹{trail_sl:.2f}"
+                        self.log.info(
+                            f"Trailing SL | {pos.symbol}: "
+                            f"₹{pos.stop_loss_price:.2f} → ₹{trail_sl:.2f} "
+                            f"(unrealised P&L: ₹{(ltp - pos.entry_price) * pos.qty:+.0f})"
                         )
                         pos.stop_loss_price = trail_sl
 
@@ -159,7 +156,7 @@ class EMACrossoverBot(BaseStrategy):
     # ── Order helpers ──────────────────────────────────────────────────────────
 
     def _place_buy(self, symbol: str, qty: int, price: float,
-                   sl: float, target: float) -> None:
+                   sl: float, target) -> None:
         exchange, tradingsymbol = symbol.split(":")
         try:
             order_id = self.kite.place_order(

@@ -1,31 +1,36 @@
 """
-Bot 3 – VWAP Scalping Strategy.
+Bot 3 – VWAP Momentum Strategy.
 
 Logic:
   VWAP (Volume Weighted Average Price) acts as a dynamic support/resistance.
   Institutional traders often defend VWAP, making it a reliable mean-reversion
-  anchor intraday.
+  and momentum anchor intraday.
 
   Entry  : Price dips BELOW VWAP by ≥ VWAP_DEVIATION_PCT (0.5%) while
             momentum is returning (current candle close > previous candle close)
-            and volume on the dip candle > average volume (confirms buyers stepped in).
+            and volume on the dip candle ≥ 1.2× average (confirms buyers stepped in).
 
   Exit   :
-    • Target      : Price returns to VWAP (quick scalp)
-    • Stop loss   : Entry - 0.75 × ATR (tight stop – scalping)
-    • Max hold    : 15 candles (15m on 1m chart = no overnight risk)
-    • Force close : 15:15 IST
+    • Hard stop loss : Entry price × (1 - HARD_STOP_LOSS_PCT/100)  [10% below]
+    • NO fixed target: once price recovers through VWAP, profits run further
+    • Trailing SL    : trails at (current_price - TRAILING_ATR_MULTIPLIER × ATR)
+                       allows capturing full momentum beyond VWAP
+    • Max hold       : 30 candles (30m on 1m chart) — safety net
+    • Force close    : 15:15 IST
 
 Instruments: Nifty 50 ETF (NIFTYBEES) and BankNifty ETF (BANKBEES)
              — extremely liquid, tight spreads, suitable for ₹5k capital.
-Candle interval: 1 minute (scalp timeframe).
+Candle interval: 1 minute.
 """
 from datetime import datetime
 
 import pandas as pd
 import pytz
 
-from config.settings import VWAP_DEVIATION_PCT, SQUARE_OFF_TIME, TIMEZONE
+from config.settings import (
+    VWAP_DEVIATION_PCT, SQUARE_OFF_TIME, TIMEZONE,
+    HARD_STOP_LOSS_PCT, TRAILING_ATR_MULTIPLIER,
+)
 from core.risk_manager import Position, get_risk_manager
 from data.market_data import MarketData
 from strategies.base_strategy import BaseStrategy
@@ -38,7 +43,7 @@ VWAP_INSTRUMENTS = {
     "NSE:BANKBEES":  "NSE:BANKBEES",    # BankNifty ETF
 }
 
-MAX_CANDLES_HOLD = 15   # Force exit after 15 × 1m = 15 minutes
+MAX_CANDLES_HOLD = 30   # Safety net: exit after 30 × 1m = 30 minutes if trailing SL not hit
 
 
 class VWAPScalperBot(BaseStrategy):
@@ -104,22 +109,20 @@ class VWAPScalperBot(BaseStrategy):
         if not (below_vwap and momentum_return and volume_spike):
             return
 
+        # Hard SL 10%, no fixed target — trailing SL captures the full VWAP bounce
         entry_price  = price
-        atr          = last["atr"]
-        stop_loss_px = round(entry_price - 0.75 * atr, 2)
-        target_px    = round(vwap, 2)                         # target = VWAP
-        sl_pct       = ((entry_price - stop_loss_px) / entry_price) * 100
-        qty          = self.risk.calculate_position_size(entry_price, sl_pct)
+        stop_loss_px = round(entry_price * (1 - HARD_STOP_LOSS_PCT / 100), 2)
+        qty          = self.risk.calculate_position_size(entry_price, HARD_STOP_LOSS_PCT)
 
         if qty < 1:
             return
 
         self.log.info(
-            f"SIGNAL | {symbol} | VWAP deviation={deviation_pct:.2f}% | "
+            f"SIGNAL | {symbol} | VWAP dev={deviation_pct:.2f}% | Vol✓ | "
             f"Entry: ₹{entry_price:.2f} | VWAP: ₹{vwap:.2f} | "
-            f"SL: ₹{stop_loss_px:.2f} | Qty: {qty}"
+            f"Hard SL: ₹{stop_loss_px:.2f} (-10%) | Target: UNCAPPED | Qty: {qty}"
         )
-        self._place_buy(symbol, qty, entry_price, stop_loss_px, target_px)
+        self._place_buy(symbol, qty, entry_price, stop_loss_px, target=None)
 
     # ── Position management ────────────────────────────────────────────────────
 
@@ -144,24 +147,32 @@ class VWAPScalperBot(BaseStrategy):
                     self._place_sell(pos, ltp, reason="EOD_SQUAREOFF")
                     continue
 
-                # Stop loss
+                # Hard stop loss
                 if pos.is_stop_loss_triggered(ltp):
                     self._place_sell(pos, ltp, reason="STOP_LOSS")
                     del self._candles_held[order_id]
                     continue
 
-                # Target (price returned to VWAP)
-                if pos.is_target_hit(ltp):
-                    self._place_sell(pos, ltp, reason="VWAP_TARGET")
-                    del self._candles_held[order_id]
-                    continue
-
-                # Time-based exit (max hold candles × 2 checks per candle)
+                # Time-based safety net (30 minutes max hold)
                 if candles_held >= MAX_CANDLES_HOLD * 2:
-                    self.log.info(f"Max hold time reached for {pos.symbol}")
+                    self.log.info(f"Max hold reached for {pos.symbol}")
                     self._place_sell(pos, ltp, reason="MAX_HOLD")
                     del self._candles_held[order_id]
                     continue
+
+                # Trailing SL — ratchets up as price rises, no fixed profit cap
+                df_1m = self.market_data.get_candles(pos.symbol, interval="minute", lookback_days=1)
+                if not df_1m.empty:
+                    df_1m = self.market_data.add_atr(df_1m, period=10)
+                    atr = df_1m.iloc[-1]["atr"]
+                    trail_sl = round(ltp - TRAILING_ATR_MULTIPLIER * atr, 2)
+                    if trail_sl > pos.stop_loss_price:
+                        self.log.info(
+                            f"Trailing SL | {pos.symbol}: "
+                            f"₹{pos.stop_loss_price:.2f} → ₹{trail_sl:.2f} "
+                            f"(unrealised P&L: ₹{(ltp - pos.entry_price) * pos.qty:+.0f})"
+                        )
+                        pos.stop_loss_price = trail_sl
 
             except Exception as e:
                 self.log.error(f"Error managing {pos.symbol}: {e}")
@@ -169,7 +180,7 @@ class VWAPScalperBot(BaseStrategy):
     # ── Order helpers ──────────────────────────────────────────────────────────
 
     def _place_buy(self, symbol: str, qty: int, price: float,
-                   sl: float, target: float) -> None:
+                   sl: float, target) -> None:
         exchange, tradingsymbol = symbol.split(":")
         try:
             order_id = self.kite.place_order(

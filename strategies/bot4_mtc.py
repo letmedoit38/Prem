@@ -29,17 +29,16 @@ THE 5 PILLARS — ALL must align before entering a trade:
               → Morning session has strongest directional momentum
               → Afternoon session has second directional impulse
 
-SMART 2-STAGE EXIT:
-  Stage 1: When LTP reaches Entry + 1.0×ATR → SELL 50% qty (lock partial profit)
-           SL immediately moves to breakeven (entry price)
-  Stage 2: Trail remaining 50% with a 2×ATR trailing stop
-  Hard SL:  Entry - 1.5×ATR (absolute maximum loss per trade)
-  EOD:      Force close ALL positions at 15:15 IST
+EXIT RULES (no fixed profit target — let winners run as long as possible):
+  Hard SL:      Entry price × (1 - 10%) — absolute floor, never risk more
+  Trailing SL:  Starts at hard SL, ratchets UP as price rises using ATR.
+                Once trailing SL is above entry (breakeven), there is zero loss risk.
+                Exits ONLY when price reverses and hits the trailing level.
+  EOD:          Force close ALL positions at 15:15 IST regardless.
 
 RISK SIZING:
-  Risk per trade: 1% of total capital
-  SL distance:    1.5×ATR
-  Max position:   40% of total capital cap
+  Risk per trade: 1% of total capital, capped at 40% of capital per trade
+  Max positions:  4 simultaneous (one per bot)
 
 Instruments: BAJFINANCE, AXISBANK, WIPRO — non-overlapping with other bots,
              high-momentum, highly liquid NSE stocks.
@@ -54,7 +53,7 @@ import pytz
 from config.settings import (
     MTC_BOT_SYMBOLS, MTC_HTF_EMA_FAST, MTC_HTF_EMA_SLOW,
     MTC_RSI_LOW, MTC_RSI_HIGH, MTC_VOLUME_MULTIPLIER,
-    MTC_PARTIAL_EXIT_ATR, MTC_STOP_LOSS_ATR, MTC_TARGET_ATR,
+    HARD_STOP_LOSS_PCT, TRAILING_ATR_MULTIPLIER,
     SQUARE_OFF_TIME, TIMEZONE,
 )
 from core.risk_manager import Position, get_risk_manager
@@ -90,8 +89,6 @@ class MTCBot(BaseStrategy):
         )
         self.kite = kite
         self.market_data = MarketData(kite)
-        # Tracks whether Stage-1 partial exit has been executed per position
-        self._partial_done: dict = {}   # order_id → bool
 
     # ── Session filter ─────────────────────────────────────────────────────────
 
@@ -175,12 +172,10 @@ class MTCBot(BaseStrategy):
             return  # Low-volume move — likely retail noise, skip
 
         # ── All 5 pillars confirmed → calculate sizing and enter ───────────────
+        # Hard SL 10%, no fixed profit target — trailing SL handles all exits
         entry_price  = last["close"]
-        atr          = last["atr"]
-        stop_loss_px = round(entry_price - MTC_STOP_LOSS_ATR * atr, 2)
-        target_px    = round(entry_price + MTC_TARGET_ATR  * atr, 2)
-        sl_pct       = ((entry_price - stop_loss_px) / entry_price) * 100
-        qty          = self.risk.calculate_position_size(entry_price, sl_pct)
+        stop_loss_px = round(entry_price * (1 - HARD_STOP_LOSS_PCT / 100), 2)
+        qty          = self.risk.calculate_position_size(entry_price, HARD_STOP_LOSS_PCT)
 
         if qty < 1:
             return
@@ -188,10 +183,10 @@ class MTCBot(BaseStrategy):
         self.log.info(
             f"MTC SIGNAL | {symbol} | HTF✓ MACD✓ RSI={last['rsi']:.1f}✓ "
             f"Vol={last['volume'] / avg_vol:.1f}x✓ | "
-            f"Entry: ₹{entry_price:.2f} | SL: ₹{stop_loss_px:.2f} | "
-            f"Target: ₹{target_px:.2f} | Qty: {qty}"
+            f"Entry: ₹{entry_price:.2f} | Hard SL: ₹{stop_loss_px:.2f} (-10%) | "
+            f"Target: UNCAPPED (trailing SL) | Qty: {qty}"
         )
-        self._place_buy(symbol, qty, entry_price, stop_loss_px, target_px)
+        self._place_buy(symbol, qty, entry_price, stop_loss_px, target=None)
 
     # ── Position management ────────────────────────────────────────────────────
 
@@ -211,52 +206,27 @@ class MTCBot(BaseStrategy):
                 if now_time >= SQUARE_OFF_TIME:
                     self.log.info(f"EOD square-off: {pos.symbol}")
                     self._place_sell(pos, ltp, reason="EOD_SQUAREOFF")
-                    self._partial_done.pop(order_id, None)
                     continue
 
-                # Hard stop loss (Stage 0)
+                # Hard stop loss
                 if pos.is_stop_loss_triggered(ltp):
                     self.log.info(f"Hard SL hit: {pos.symbol} @ ₹{ltp:.2f}")
                     self._place_sell(pos, ltp, reason="STOP_LOSS")
-                    self._partial_done.pop(order_id, None)
                     continue
 
-                # Full target hit
-                if pos.is_target_hit(ltp):
-                    self.log.info(f"Full target hit: {pos.symbol} @ ₹{ltp:.2f}")
-                    self._place_sell(pos, ltp, reason="FULL_TARGET")
-                    self._partial_done.pop(order_id, None)
-                    continue
-
-                # Fetch current ATR for dynamic management
+                # No fixed target — trailing SL is the only profit exit
+                # Ratchet SL upward with price; never move it down
                 df = self.market_data.get_candles(pos.symbol, interval="5minute", lookback_days=1)
                 if df.empty:
                     continue
                 df = self.market_data.add_atr(df)
                 atr = df.iloc[-1]["atr"]
-
-                # Stage 1: Partial exit at 1×ATR profit (50% of position)
-                partial_done = self._partial_done.get(order_id, False)
-                partial_target = pos.entry_price + MTC_PARTIAL_EXIT_ATR * atr
-
-                if not partial_done and ltp >= partial_target and pos.qty >= 2:
-                    partial_qty = pos.qty // 2
-                    self.log.info(
-                        f"PARTIAL EXIT (Stage 1) | {pos.symbol} | "
-                        f"{partial_qty} shares @ ₹{ltp:.2f} | SL → breakeven"
-                    )
-                    self._place_partial_sell(pos, partial_qty, ltp)
-                    self._partial_done[order_id] = True
-                    # Move SL to breakeven — no risk remains on this trade
-                    pos.stop_loss_price = pos.entry_price
-                    continue
-
-                # Stage 2: Trail remaining position with 2×ATR trailing stop
-                trail_sl = round(ltp - 2.0 * atr, 2)
+                trail_sl = round(ltp - TRAILING_ATR_MULTIPLIER * atr, 2)
                 if trail_sl > pos.stop_loss_price:
-                    self.log.debug(
-                        f"Trail SL | {pos.symbol}: "
-                        f"₹{pos.stop_loss_price:.2f} → ₹{trail_sl:.2f}"
+                    self.log.info(
+                        f"Trailing SL | {pos.symbol}: "
+                        f"₹{pos.stop_loss_price:.2f} → ₹{trail_sl:.2f} "
+                        f"(unrealised P&L: ₹{(ltp - pos.entry_price) * pos.qty:+.0f})"
                     )
                     pos.stop_loss_price = trail_sl
 
@@ -266,7 +236,7 @@ class MTCBot(BaseStrategy):
     # ── Order helpers ──────────────────────────────────────────────────────────
 
     def _place_buy(self, symbol: str, qty: int, price: float,
-                   sl: float, target: float) -> None:
+                   sl: float, target) -> None:
         exchange, tradingsymbol = symbol.split(":")
         try:
             order_id = self.kite.place_order(
@@ -280,49 +250,15 @@ class MTCBot(BaseStrategy):
             )
             pos = Position(
                 symbol=symbol, qty=qty, entry_price=price,
-                stop_loss_price=sl, target_price=target,
+                stop_loss_price=sl, target_price=target,   # target=None: uncapped
                 bot_name=self.name, order_id=str(order_id),
             )
             self.risk.register_trade(pos)
-            self._partial_done[str(order_id)] = False
             notify_trade(self.name, "BUY", symbol, qty, price)
             log_trade("BUY", symbol, qty, price, str(order_id), self.name)
             self.log.info(f"BUY placed: {symbol} x{qty} @ ₹{price:.2f} | order_id={order_id}")
         except Exception as e:
             self.log.error(f"BUY order failed for {symbol}: {e}")
-
-    def _place_partial_sell(self, pos: Position, qty: int, price: float) -> None:
-        """
-        Close a portion of the position (Stage-1 exit).
-        Updates risk manager state directly (thread-safe via lock) since
-        RiskManager.close_trade() expects full position closure.
-        """
-        exchange, tradingsymbol = pos.symbol.split(":")
-        try:
-            order_id = self.kite.place_order(
-                variety=self.kite.VARIETY_REGULAR,
-                exchange=exchange,
-                tradingsymbol=tradingsymbol,
-                transaction_type=self.kite.TRANSACTION_TYPE_SELL,
-                quantity=qty,
-                product=self.kite.PRODUCT_MIS,
-                order_type=self.kite.ORDER_TYPE_MARKET,
-            )
-            partial_pnl = (price - pos.entry_price) * qty
-            # Thread-safe capital and PnL update for the partial exit
-            with self.risk._lock:
-                self.risk.daily_pnl      += partial_pnl
-                self.risk.available_capital += qty * pos.entry_price + partial_pnl
-                pos.qty -= qty   # Reduce remaining qty (close_trade will handle the rest)
-
-            notify_trade(self.name, "PARTIAL_SELL", pos.symbol, qty, price, partial_pnl)
-            log_trade("PARTIAL_SELL", pos.symbol, qty, price, str(order_id), self.name, partial_pnl)
-            self.log.info(
-                f"PARTIAL SELL | {pos.symbol} x{qty} @ ₹{price:.2f} | "
-                f"Partial PnL: ₹{partial_pnl:+.2f} | Remaining qty: {pos.qty}"
-            )
-        except Exception as e:
-            self.log.error(f"Partial sell failed for {pos.symbol}: {e}")
 
     def _place_sell(self, pos: Position, price: float, reason: str) -> None:
         exchange, tradingsymbol = pos.symbol.split(":")

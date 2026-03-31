@@ -6,15 +6,16 @@ Logic:
             still in an overall uptrend (price > 50 EMA).
             Wait for RSI to turn back up (previous candle RSI < current RSI)
             — this confirms the reversal rather than catching a falling knife.
-            ADDED: price must also have touched the Bollinger lower band on
-            the dip (dual-confirmation reduces false signals significantly).
-            ADDED: bounce candle volume ≥ 1.2× 20-bar average (confirms
-            buyers stepped in, not just a dead-cat bounce on low volume).
+            Bollinger lower band must have been touched on the dip candle
+            (dual-confirmation reduces false signals significantly).
+            Bounce candle volume ≥ 1.2× 20-bar average (confirms buyers
+            stepped in, not just a dead-cat bounce on low volume).
   Exit   :
-    • Stop loss   : Entry price - (1.5 × ATR)
-    • Target      : RSI reaches 60 OR price + (2 × ATR)
-    • Trailing SL : trails at entry_price - ATR once breakeven is cleared
-    • Force close : 15:15 IST
+    • Hard stop loss : Entry price × (1 - HARD_STOP_LOSS_PCT/100)  [10% below]
+    • NO fixed target: profits are uncapped — let the recovery run fully
+    • Trailing SL    : trails at (current_price - TRAILING_ATR_MULTIPLIER × ATR)
+                       ratchets up continuously, exits only when price reverses
+    • Force close    : 15:15 IST
 
 Instruments: banking / financial stocks (tend to mean-revert well).
 Candle interval: 15 minutes (less noise than 5m for RSI).
@@ -24,7 +25,8 @@ from datetime import datetime
 import pytz
 
 from config.settings import (
-    RSI_PERIOD, RSI_OVERSOLD, RSI_OVERBOUGHT, SQUARE_OFF_TIME, TIMEZONE
+    RSI_PERIOD, RSI_OVERSOLD, RSI_OVERBOUGHT, SQUARE_OFF_TIME, TIMEZONE,
+    HARD_STOP_LOSS_PCT, TRAILING_ATR_MULTIPLIER,
 )
 from core.risk_manager import Position, get_risk_manager
 from data.market_data import MarketData
@@ -91,22 +93,20 @@ class RSIReversalBot(BaseStrategy):
         if not (uptrend and rsi_was_below and rsi_turning and bb_touched and vol_ok):
             return
 
+        # Hard SL 10%, no fixed target — trailing SL exits the trade
         entry_price  = last["close"]
-        atr          = last["atr"]
-        stop_loss_px = round(entry_price - 1.5 * atr, 2)
-        target_px    = round(entry_price + 2.0 * atr, 2)
-        sl_pct       = ((entry_price - stop_loss_px) / entry_price) * 100
-        qty          = self.risk.calculate_position_size(entry_price, sl_pct)
+        stop_loss_px = round(entry_price * (1 - HARD_STOP_LOSS_PCT / 100), 2)
+        qty          = self.risk.calculate_position_size(entry_price, HARD_STOP_LOSS_PCT)
 
         if qty < 1:
             return
 
         self.log.info(
-            f"SIGNAL | {symbol} | RSI reversal @ {last['rsi']:.1f} | "
-            f"Entry: ₹{entry_price:.2f} | SL: ₹{stop_loss_px:.2f} | "
-            f"Target: ₹{target_px:.2f} | Qty: {qty}"
+            f"SIGNAL | {symbol} | RSI reversal @ {last['rsi']:.1f} | BB touch✓ | Vol✓ | "
+            f"Entry: ₹{entry_price:.2f} | Hard SL: ₹{stop_loss_px:.2f} (-10%) | "
+            f"Target: UNCAPPED (trailing SL) | Qty: {qty}"
         )
-        self._place_buy(symbol, qty, entry_price, stop_loss_px, target_px)
+        self._place_buy(symbol, qty, entry_price, stop_loss_px, target=None)
 
     # ── Position management ────────────────────────────────────────────────────
 
@@ -127,40 +127,26 @@ class RSIReversalBot(BaseStrategy):
                     self._place_sell(pos, ltp, reason="EOD_SQUAREOFF")
                     continue
 
-                # Stop loss
+                # Hard stop loss
                 if pos.is_stop_loss_triggered(ltp):
                     self._place_sell(pos, ltp, reason="STOP_LOSS")
                     continue
 
-                # RSI target: fetch latest RSI
+                # No fixed target — trailing SL lets the recovery run fully
                 df = self.market_data.get_candles(pos.symbol, interval="15minute", lookback_days=1)
                 if not df.empty:
-                    df = self.market_data.add_rsi(df, RSI_PERIOD)
                     df = self.market_data.add_atr(df)
-                    current_rsi = df.iloc[-1]["rsi"]
                     atr = df.iloc[-1]["atr"]
 
-                    # Exit when RSI reaches overbought territory
-                    if current_rsi >= RSI_OVERBOUGHT:
+                    # Ratchet trailing SL up as price rises; never move it down
+                    trail_sl = round(ltp - TRAILING_ATR_MULTIPLIER * atr, 2)
+                    if trail_sl > pos.stop_loss_price:
                         self.log.info(
-                            f"RSI overbought ({current_rsi:.1f}) | exiting {pos.symbol}"
+                            f"Trailing SL | {pos.symbol}: "
+                            f"₹{pos.stop_loss_price:.2f} → ₹{trail_sl:.2f} "
+                            f"(unrealised P&L: ₹{(ltp - pos.entry_price) * pos.qty:+.0f})"
                         )
-                        self._place_sell(pos, ltp, reason="RSI_TARGET")
-                        continue
-
-                    # Price target
-                    if pos.is_target_hit(ltp):
-                        self._place_sell(pos, ltp, reason="PRICE_TARGET")
-                        continue
-
-                    # Trailing SL once past breakeven
-                    if ltp > pos.entry_price:
-                        trail_sl = round(ltp - 1.0 * atr, 2)
-                        if trail_sl > pos.stop_loss_price:
-                            pos.stop_loss_price = trail_sl
-                            self.log.debug(
-                                f"Trailing SL updated for {pos.symbol}: ₹{trail_sl:.2f}"
-                            )
+                        pos.stop_loss_price = trail_sl
 
             except Exception as e:
                 self.log.error(f"Error managing {pos.symbol}: {e}")
@@ -168,7 +154,7 @@ class RSIReversalBot(BaseStrategy):
     # ── Order helpers ──────────────────────────────────────────────────────────
 
     def _place_buy(self, symbol: str, qty: int, price: float,
-                   sl: float, target: float) -> None:
+                   sl: float, target) -> None:
         exchange, tradingsymbol = symbol.split(":")
         try:
             order_id = self.kite.place_order(
