@@ -10,3 +10,7 @@ holidays==0.46
 websocket-client==1.8.0
 loguru==0.7.2
 colorama==0.4.6
+
+# ── Telegram Stock Alert Bot ───────────────────────────────────────────────
+python-telegram-bot==20.7
+yfinance>=0.2.50

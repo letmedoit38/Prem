@@ -1,0 +1,205 @@
+============================================================
+  STOCK ALERT BOT - COMPLETE SETUP GUIDE
+  WhatsApp number: +91 9486196299
+============================================================
+
+WHAT YOU NEED (all free):
+  - Python 3.10+       https://python.org/downloads
+  - Twilio account     https://twilio.com/try-twilio
+  - ngrok account      https://ngrok.com (free signup)
+
+
+============================================================
+  STEP 1 - Install Python (skip if already installed)
+============================================================
+
+1. Go to https://www.python.org/downloads/
+2. Download the latest Python 3.x installer
+3. Run the installer
+   IMPORTANT: Check the box "Add Python to PATH" before clicking Install
+4. Open Command Prompt and type:  python --version
+   You should see something like:  Python 3.11.x
+
+
+============================================================
+  STEP 2 - Set up Twilio (free WhatsApp sandbox)
+============================================================
+
+1. Go to https://www.twilio.com/try-twilio
+2. Sign up with your email (no credit card needed)
+3. After logging in, go to:
+   Messaging → Try it out → Send a WhatsApp message
+
+4. You will see a sandbox number like: +1 415 523 8886
+   And a join code like: "join yellow-tiger"
+
+5. On your phone (+91 9486196299), open WhatsApp and send:
+     join yellow-tiger
+   (use your actual code shown on Twilio dashboard)
+   to the number: +1 415 523 8886
+
+6. You'll receive: "Joined! ..."  ← This means it's connected.
+
+7. From the Twilio Dashboard, copy:
+   - Account SID  (looks like: ACxxxxxxxxxxxxxx)
+   - Auth Token   (click the eye icon to reveal)
+
+8. The webhook URL step comes after starting the bot (Step 5).
+
+
+============================================================
+  STEP 3 - Set up ngrok (so Twilio can deliver your replies)
+============================================================
+
+1. Go to https://ngrok.com and sign up (free)
+2. After logging in, go to:
+   Dashboard → Your Authtoken
+3. Copy your auth token (long string of characters)
+
+
+============================================================
+  STEP 4 - Configure the bot
+============================================================
+
+1. In the bot folder (P:\Fun code\watsapp bot\), find:
+     .env.example
+
+2. Copy it and rename the copy to:
+     .env
+
+3. Open .env in Notepad and fill in:
+
+   TWILIO_ACCOUNT_SID=AC...      (from Step 2)
+   TWILIO_AUTH_TOKEN=...         (from Step 2)
+   WHATSAPP_TO=whatsapp:+919486196299
+   NGROK_AUTH_TOKEN=...          (from Step 3)
+
+4. Save the file.
+
+
+============================================================
+  STEP 5 - Install dependencies (one time only)
+============================================================
+
+Double-click:  INSTALL.bat
+
+Wait for it to finish. You'll see "INSTALLATION COMPLETE".
+
+
+============================================================
+  STEP 6 - Register the webhook with Twilio
+============================================================
+
+1. Double-click START_BOT.bat
+2. Watch the console. You'll see a line like:
+     Webhook URL: https://abc123.ngrok.io/webhook
+     >>> Paste this in Twilio Console > Messaging > Sandbox Settings
+
+3. Copy that URL (e.g. https://abc123.ngrok.io/webhook)
+
+4. Go to Twilio Dashboard:
+   Messaging → Settings → WhatsApp Sandbox Settings
+
+5. In the field "When a message comes in", paste the URL.
+   Make sure method is set to: HTTP POST
+
+6. Click Save.
+
+NOTE: ngrok URL changes each time you restart the bot.
+You only need to update Twilio when the URL changes.
+(With a paid ngrok plan you can get a fixed URL.)
+
+
+============================================================
+  STEP 7 - Start the bot (every day you want alerts)
+============================================================
+
+Double-click:  START_BOT.bat
+
+You will receive a WhatsApp message on +91 9486196299:
+
+  "Stock Alert Bot is working!
+
+   Top 10 NSE Stock Prices:
+   [UP] RELIANCE.NS: Rs 2,850.00 (+0.5%) | -8% from 52wH
+   [UP] TCS.NS:      Rs 3,920.00 (+1.2%) | -5% from 52wH
+   ...
+
+   What would you like to do?
+   1 - Get current prices of top 10 stocks
+   2 - Toggle 52-week low alerts (ON/OFF)
+   3 - View full watchlist (stocks + ETFs)
+
+   Reply with 1, 2, or 3"
+
+
+============================================================
+  DAILY USAGE
+============================================================
+
+The bot runs automatically. You'll receive:
+
+  09:00  Pre-market briefing (all 15 symbols)
+  09:15  First price check
+  10:15  Hourly price checks until 15:15
+  :00/:30  News alerts every 30 min (Mon-Fri)
+  16:00  Post-market digest
+
+Automatic alerts trigger when:
+  - Any stock falls 20%+ below its 52-week high
+  - Important news: RBI, SEBI, budget, rate change, market crash
+  - Sector news matching your watchlist stocks
+
+You can reply at any time:
+  1 → Get live prices now
+  2 → Toggle 52-week low alerts on/off
+  3 → See full watchlist
+
+To add a stock to your watchlist, run in Command Prompt:
+  python manage.py add ZOMATO "Zomato" "Internet"
+
+To stop the bot: press Ctrl+C in the bot window.
+
+
+============================================================
+  ADDING TO GITHUB (separate repository)
+============================================================
+
+1. Go to https://github.com/new
+2. Repository name: whatsapp-stock-alert-bot
+3. Set to Private (recommended — your .env has credentials)
+4. Do NOT initialize with README (you already have files)
+5. Click "Create repository"
+
+6. Open Command Prompt in P:\Fun code\watsapp bot\ and run:
+   git init
+   git add .
+   git commit -m "Initial commit: WhatsApp stock alert bot"
+   git remote add origin https://github.com/YOUR_USERNAME/whatsapp-stock-alert-bot.git
+   git push -u origin main
+
+IMPORTANT: Never commit your .env file. It is already in .gitignore.
+
+
+============================================================
+  TROUBLESHOOTING
+============================================================
+
+Bot starts but no WhatsApp received?
+  - Check TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN in .env
+  - Make sure you joined the sandbox (Step 2, point 5)
+  - Check logs\bot.log for errors
+
+Replied 1/2/3 but got no response?
+  - The ngrok URL in Twilio is outdated — redo Step 6
+  - Check that Flask is running (see console output)
+
+yfinance error on install?
+  - Run: pip install --upgrade setuptools wheel
+  - Then run INSTALL.bat again
+
+ngrok error?
+  - Make sure NGROK_AUTH_TOKEN is set correctly in .env
+  - Log in to ngrok.com and copy a fresh auth token
+
+============================================================
