@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#0f1117">
+<title>Stock Alert Bot</title>
+<style>
+  :root {
+    --bg:#0f1117; --card:#1a1d27; --border:#252836;
+    --green:#00e676; --red:#ff5252; --yellow:#ffca28;
+    --blue:#448aff; --purple:#7c4dff; --text:#e8eaf6; --muted:#6b7280;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;min-height:100vh;padding-bottom:30px}
+  header{background:linear-gradient(135deg,#1a1d27,#12141f);padding:18px 16px 14px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10}
+  header h1{font-size:16px;font-weight:700;letter-spacing:.3px}
+  header h1 span{color:var(--purple)}
+  .hrow{display:flex;align-items:center;justify-content:space-between}
+  .pill{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:700;border:1px solid}
+  .pill.ok{color:var(--green);border-color:var(--green);background:#00e67611}
+  .pill.stale{color:var(--yellow);border-color:var(--yellow);background:#ffca2811}
+  .pill.err{color:var(--red);border-color:var(--red);background:#ff525211}
+  .sub{font-size:11px;color:var(--muted);margin-top:4px}
+  .tabs{display:flex;background:var(--card);border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none;position:sticky;top:57px;z-index:9}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{flex:1;min-width:80px;text-align:center;padding:11px 8px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;transition:all .2s}
+  .tab.active{color:var(--purple);border-bottom-color:var(--purple)}
+  .section{display:none;padding:14px 14px 0}
+  .section.active{display:block}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px}
+  .card-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px}
+  .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px}
+  .stat{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center}
+  .stat-val{font-size:24px;font-weight:700;line-height:1}
+  .stat-lbl{font-size:10px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:.4px}
+  .stock-row{display:flex;align-items:center;padding:11px 0;border-bottom:1px solid var(--border)}
+  .stock-row:last-child{border-bottom:none}
+  .sym{font-weight:700;font-size:13px}
+  .sname{font-size:11px;color:var(--muted);margin-top:2px}
+  .price-col{margin-left:auto;text-align:right;flex-shrink:0}
+  .price{font-size:15px;font-weight:700}
+  .chg{font-size:12px;font-weight:600;margin-top:1px}
+  .up{color:var(--green)} .dn{color:var(--red)}
+  .w52{font-size:10px;color:var(--muted);margin-top:1px}
+  .abadge{display:inline-block;font-size:9px;font-weight:700;padding:2px 6px;border-radius:8px;margin-top:3px;letter-spacing:.3px}
+  .abadge.drop{background:#ff525211;color:var(--red);border:1px solid var(--red)}
+  .abadge.low{background:#ffca2811;color:var(--yellow);border:1px solid var(--yellow)}
+  .abadge.etf{background:#448aff11;color:var(--blue);border:1px solid var(--blue)}
+  .btn{width:100%;padding:13px;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;transition:opacity .15s;margin-bottom:10px}
+  .btn:active{opacity:.7}
+  .btn-purple{background:var(--purple);color:#fff}
+  .btn-red{background:var(--red);color:#fff}
+  input{width:100%;background:#12141f;border:1px solid var(--border);border-radius:8px;color:var(--text);padding:11px 12px;font-size:14px;margin-bottom:10px}
+  input:focus{outline:none;border-color:var(--purple)}
+  input::placeholder{color:var(--muted)}
+  .news-item{padding:13px 0;border-bottom:1px solid var(--border)}
+  .news-item:last-child{border-bottom:none}
+  .nlabel{font-size:10px;font-weight:700;letter-spacing:.5px}
+  .nlabel.h{color:var(--red)} .nlabel.m{color:var(--blue)}
+  .ntitle{font-size:13px;font-weight:600;margin:4px 0}
+  .nsrc{font-size:11px;color:var(--muted)}
+  .nsum{font-size:12px;color:#9ca3c4;line-height:1.5;margin-top:5px}
+  .nlink{font-size:11px;color:var(--blue);margin-top:5px;display:inline-block}
+  #toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#2a2d3a;color:var(--text);padding:11px 20px;border-radius:10px;font-size:13px;font-weight:600;display:none;z-index:999;white-space:nowrap;box-shadow:0 4px 20px #0008;border-left:3px solid var(--purple)}
+  .spin{display:inline-block;width:16px;height:16px;border:2px solid #ffffff22;border-top-color:var(--purple);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .loading{text-align:center;padding:30px;color:var(--muted)}
+  .wa-preview{background:#0d1418;border:1px solid var(--border);border-radius:10px;padding:14px;font-family:monospace;font-size:12px;line-height:1.6;color:#e9edef;white-space:pre-wrap;word-break:break-word;max-height:300px;overflow-y:auto}
+  .refresh-note{font-size:11px;color:var(--muted);text-align:center;margin-bottom:8px}
+</style>
+</head>
+<body>
+<header>
+  <div class="hrow">
+    <h1>📈 Stock Alert <span>Bot</span></h1>
+    <span id="status-pill" class="pill stale">Loading...</span>
+  </div>
+  <div class="sub">NSE India · +91 9486196299 · <span id="last-updated">—</span></div>
+</header>
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('prices',this)">📊 Prices</div>
+  <div class="tab" onclick="switchTab('alerts',this)">🔔 Alerts</div>
+  <div class="tab" onclick="switchTab('etfs',this)">📦 ETFs</div>
+  <div class="tab" onclick="switchTab('news',this)">📰 News</div>
+  <div class="tab" onclick="switchTab('test',this)">🧪 Test</div>
+  <div class="tab" onclick="switchTab('manage',this)">⚙️ Manage</div>
+</div>
+<div id="tab-prices" class="section active">
+  <div class="refresh-note">Auto-refreshes every 60s · <a href="#" onclick="loadAll();return false" style="color:var(--purple)">Refresh now</a></div>
+  <div class="stats">
+    <div class="stat"><div class="stat-val up" id="s-up">—</div><div class="stat-lbl">Up Today</div></div>
+    <div class="stat"><div class="stat-val dn" id="s-dn">—</div><div class="stat-lbl">Down Today</div></div>
+    <div class="stat"><div class="stat-val" style="color:var(--red)" id="s-drop">—</div><div class="stat-lbl">Drop Alerts</div></div>
+    <div class="stat"><div class="stat-val" style="color:var(--yellow)" id="s-low">—</div><div class="stat-lbl">Near 52w Low</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Top 10 Large-Cap Stocks</div>
+    <div id="stocks-list"><div class="loading"><span class="spin"></span><br><br>Fetching live prices...</div></div>
+  </div>
+</div>
+<div id="tab-alerts" class="section">
+  <div class="card">
+    <div class="card-title">🔴 Drop Alerts — ≥20% Below 52-Week High</div>
+    <div id="drop-alerts-list"><div class="loading">Loading...</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">⚠️ Near 52-Week Low — Within 5%</div>
+    <div id="low-alerts-list"><div class="loading">Loading...</div></div>
+  </div>
+</div>
+<div id="tab-etfs" class="section">
+  <div class="card">
+    <div class="card-title">Gold · Silver · Pharma · IT · Index</div>
+    <div id="etfs-list"><div class="loading"><span class="spin"></span><br><br>Fetching ETF prices...</div></div>
+  </div>
+</div>
+<div id="tab-news" class="section">
+  <div class="card">
+    <div class="card-title">Market News · <a href="#" onclick="loadNews();return false" style="color:var(--purple);font-size:11px">↻ Refresh</a></div>
+    <div id="news-list"><div class="loading">Tap Refresh to load news</div></div>
+  </div>
+</div>
+<div id="tab-test" class="section">
+  <div class="card">
+    <div class="card-title">WhatsApp Startup Message Preview</div>
+    <div class="wa-preview" id="wa-preview">Loading preview...</div>
+  </div>
+  <div class="card">
+    <div class="card-title">Drop Alert Preview</div>
+    <div class="wa-preview" id="drop-preview">Loading...</div>
+  </div>
+  <div class="card">
+    <div class="card-title">Interactive Menu (reply on WhatsApp)</div>
+    <div style="background:#12141f;border-radius:10px;padding:14px;font-size:13px;line-height:2.2">
+      <b style="color:var(--purple)">1</b> → Get current prices of top 10 stocks<br>
+      <b style="color:var(--purple)">2</b> → Toggle 52-week low alerts ON/OFF<br>
+      <b style="color:var(--purple)">3</b> → View full watchlist
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Automated Schedule (Mon–Fri IST)</div>
+    <div style="font-size:13px;line-height:2.4">
+      🌅 <b>09:00</b> Pre-market briefing<br>
+      📊 <b>09:15–15:15</b> Hourly price checks<br>
+      📰 <b>Every 30 min</b> Market news scan<br>
+      📅 <b>16:00</b> Post-market digest
+    </div>
+  </div>
+</div>
+<div id="tab-manage" class="section">
+  <div class="card">
+    <div class="card-title">Add Custom / Small-Cap Stock</div>
+    <input type="text" id="add-ticker" placeholder="NSE Ticker (e.g. ZOMATO)">
+    <input type="text" id="add-name" placeholder="Company name (optional)">
+    <input type="text" id="add-sector" placeholder="Sector (optional)">
+    <button class="btn btn-purple" onclick="addSymbol()">+ Add to Watchlist</button>
+    <div id="add-msg" style="font-size:12px;min-height:16px"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Remove Custom Symbol</div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Default stocks &amp; ETFs are protected.</p>
+    <input type="text" id="rem-ticker" placeholder="NSE Ticker (e.g. ZOMATO)">
+    <button class="btn btn-red" onclick="removeSymbol()">Remove from Watchlist</button>
+    <div id="rem-msg" style="font-size:12px;min-height:16px"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Default Watchlist (15 symbols)</div>
+    <div style="font-size:12px;color:var(--muted);line-height:2.2">
+      RELIANCE · TCS · INFY · HDFCBANK · ICICIBANK · MARUTI · ITC · SUNPHARMA · NTPC · LT<br>
+      <span style="color:var(--blue)">GOLDBEES · SILVERBEES · PHARMIBEES · ICICITECHU · NIFTYBEES</span>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+<script>
+const STOCKS=[{s:'RELIANCE.NS',n:'Reliance Industries',sector:'Energy'},{s:'TCS.NS',n:'Tata Consultancy Services',sector:'IT'},{s:'INFY.NS',n:'Infosys',sector:'IT'},{s:'HDFCBANK.NS',n:'HDFC Bank',sector:'Banking'},{s:'ICICIBANK.NS',n:'ICICI Bank',sector:'Banking'},{s:'MARUTI.NS',n:'Maruti Suzuki',sector:'Auto'},{s:'ITC.NS',n:'ITC Ltd',sector:'FMCG'},{s:'SUNPHARMA.NS',n:'Sun Pharmaceutical',sector:'Pharma'},{s:'NTPC.NS',n:'NTPC',sector:'Power'},{s:'LT.NS',n:'Larsen & Toubro',sector:'Infra'}];
+const ETFS=[{s:'GOLDBEES.NS',n:'Nippon Gold ETF',sector:'Gold ETF'},{s:'SILVERBEES.NS',n:'Nippon Silver ETF',sector:'Silver ETF'},{s:'PHARMIBEES.NS',n:'Nippon Pharma ETF',sector:'Pharma ETF'},{s:'ICICITECHU.NS',n:'ICICI Tech ETF',sector:'IT ETF'},{s:'NIFTYBEES.NS',n:'Nippon Nifty 50 ETF',sector:'Index ETF'}];
+let allData={},customSymbols=JSON.parse(localStorage.getItem('custom_symbols')||'[]');
+function switchTab(name,el){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));el.classList.add('active');document.getElementById('tab-'+name).classList.add('active');if(name==='news'&&document.getElementById('news-list').innerHTML.includes('Tap'))loadNews();}
+function toast(msg,c){const t=document.getElementById('toast');t.textContent=msg;t.style.borderLeftColor=c||'var(--purple)';t.style.display='block';setTimeout(()=>t.style.display='none',3000);}
+async function fetchQuotes(symbols){
+  const s=symbols.join(',');
+  const urls=[`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${s}&fields=regularMarketPrice,regularMarketChangePercent,fiftyTwoWeekHigh,fiftyTwoWeekLow,shortName`,`https://corsproxy.io/?${encodeURIComponent('https://query1.finance.yahoo.com/v7/finance/quote?symbols='+s+'&fields=regularMarketPrice,regularMarketChangePercent,fiftyTwoWeekHigh,fiftyTwoWeekLow,shortName')}`];
+  for(const url of urls){try{const r=await fetch(url);if(!r.ok)continue;const d=await r.json();const res=d?.quoteResponse?.result||[];if(res.length)return res;}catch(e){}}
+  return[];
+}
+function proc(q,meta){const price=q.regularMarketPrice||0,chg=q.regularMarketChangePercent||0,h52=q.fiftyTwoWeekHigh||0,l52=q.fiftyTwoWeekLow||0,drop=h52>0?(h52-price)/h52*100:0,nearLow=l52>0&&Math.abs(price-l52)/l52*100<=5;return{symbol:q.symbol,name:meta?.n||q.shortName||q.symbol,sector:meta?.sector||'',price,chg,h52,l52,drop,alertDrop:drop>=20,alertLow:nearLow&&drop<20,isEtf:!!meta?.sector?.includes('ETF')};}
+function row(d){const cs=d.chg>=0?'up':'dn',sg=d.chg>=0?'+':'',dr=d.drop>0?`↓${d.drop.toFixed(1)}% from 52wH`:'';let b='';if(d.alertDrop)b='<div><span class="abadge drop">DROP ALERT</span></div>';else if(d.alertLow)b='<div><span class="abadge low">NEAR 52W LOW</span></div>';else if(d.isEtf)b='<div><span class="abadge etf">ETF</span></div>';return`<div class="stock-row"><div><div class="sym">${d.symbol.replace('.NS','')}</div><div class="sname">${d.name}</div>${b}</div><div class="price-col"><div class="price">₹${d.price.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})}</div><div class="chg ${cs}">${sg}${d.chg.toFixed(2)}%</div><div class="w52">${dr}</div></div></div>`;}
+async function loadAll(){
+  document.getElementById('status-pill').textContent='Updating...';document.getElementById('status-pill').className='pill stale';
+  const all=[...STOCKS,...ETFS,...customSymbols.map(c=>({s:c.ticker,n:c.name,sector:c.sector}))];
+  try{
+    const quotes=await fetchQuotes(all.map(x=>x.s));
+    if(!quotes.length)throw new Error('No data returned');
+    quotes.forEach(q=>{const meta=all.find(x=>x.s===q.symbol);allData[q.symbol]=proc(q,meta);});
+    document.getElementById('stocks-list').innerHTML=STOCKS.map(m=>allData[m.s]?row(allData[m.s]):'').join('')||'<div class="loading">No data</div>';
+    document.getElementById('etfs-list').innerHTML=ETFS.map(m=>allData[m.s]?row(allData[m.s]):'').join('')||'<div class="loading">No data</div>';
+    const drops=Object.values(allData).filter(d=>d.alertDrop),lows=Object.values(allData).filter(d=>d.alertLow);
+    document.getElementById('drop-alerts-list').innerHTML=drops.length?drops.map(row).join(''):'<div class="loading" style="color:var(--green)">✓ No drop alerts — all stocks within range</div>';
+    document.getElementById('low-alerts-list').innerHTML=lows.length?lows.map(row).join(''):'<div class="loading" style="color:var(--green)">✓ No stocks near 52-week low</div>';
+    const stocks=Object.values(allData).filter(d=>!d.isEtf);
+    document.getElementById('s-up').textContent=stocks.filter(d=>d.chg>=0).length;
+    document.getElementById('s-dn').textContent=stocks.filter(d=>d.chg<0).length;
+    document.getElementById('s-drop').textContent=Object.values(allData).filter(d=>d.alertDrop).length;
+    document.getElementById('s-low').textContent=Object.values(allData).filter(d=>d.alertLow).length;
+    const lines=STOCKS.map(m=>{const d=allData[m.s];if(!d)return`  ${m.s}: unavailable`;const a=d.chg>=0?'[UP]':'[DN]',sg=d.chg>=0?'+':'',fl=d.alertDrop?' [DROP ALERT]':(d.alertLow?' [NEAR LOW]':'');return`  ${a} ${d.symbol.replace('.NS','')}: Rs ${d.price.toLocaleString('en-IN',{minimumFractionDigits:2})} (${sg}${d.chg.toFixed(1)}%) | -${d.drop.toFixed(0)}% from 52wH${fl}`;}).join('\n');
+    document.getElementById('wa-preview').textContent=`Stock Alert Bot is working!\n\nTop 10 NSE Stock Prices:\n--- Market Snapshot ---\n${lines}\n\n-----------------------------\nWhat would you like to do?\n\n1 - Get current prices of top 10 stocks\n2 - Toggle 52-week low alerts (ON/OFF)\n3 - View full watchlist\n\nReply with 1, 2, or 3`;
+    const dp=Object.values(allData).find(d=>d.alertDrop);
+    document.getElementById('drop-preview').textContent=dp?`PRICE DROP ALERT\n${dp.name} (${dp.symbol})\nSector: ${dp.sector}\n-----------------------------\nCurrent Price : Rs ${dp.price.toLocaleString('en-IN',{minimumFractionDigits:2})}\n52-Week High  : Rs ${dp.h52.toLocaleString('en-IN',{minimumFractionDigits:2})}\n52-Week Low   : Rs ${dp.l52.toLocaleString('en-IN',{minimumFractionDigits:2})}\nDrop from High: ${dp.drop.toFixed(1)}%  <<< ALERT\nToday         : ${dp.chg>=0?'+':''}${dp.chg.toFixed(2)}%`:'✓ No drop alerts at this time.\n\nWhen a stock falls ≥20% below its\n52-week high, an alert like this is sent.';
+    const now=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('last-updated').textContent='Updated '+now;
+    document.getElementById('status-pill').textContent='Live';document.getElementById('status-pill').className='pill ok';
+  }catch(e){document.getElementById('status-pill').textContent='Error';document.getElementById('status-pill').className='pill err';document.getElementById('stocks-list').innerHTML=`<div class="loading" style="color:var(--red)">Could not fetch prices.<br><small style="color:var(--muted)">${e.message}</small></div>`;}
+}
+async function loadNews(){
+  document.getElementById('news-list').innerHTML='<div class="loading"><span class="spin"></span><br><br>Fetching news...</div>';
+  try{const r=await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent('https://economictimes.indiatimes.com/markets/rss.cms')}&count=10`);const d=await r.json();if(!d.items?.length)throw new Error('empty');const HIGH=['rbi','sebi','budget','rate hike','rate cut','repo rate','crash','circuit'];document.getElementById('news-list').innerHTML=d.items.slice(0,8).map(item=>{const text=(item.title+' '+(item.description||'')).toLowerCase(),isH=HIGH.some(k=>text.includes(k));return`<div class="news-item"><div class="nlabel ${isH?'h':'m'}">${isH?'URGENT':'MARKET NEWS'} · ET Markets</div><div class="ntitle">${item.title}</div><div class="nsum">${(item.description||'').replace(/<[^>]+>/g,'').slice(0,200)}...</div><a class="nlink" href="${item.link}" target="_blank">Read more →</a></div>`;}).join('');}catch(e){document.getElementById('news-list').innerHTML='<div class="loading" style="color:var(--muted)">Could not load news. Check internet.</div>';}
+}
+function addSymbol(){const ticker=document.getElementById('add-ticker').value.trim().toUpperCase();if(!ticker){setMsg('add-msg','Enter a ticker symbol.','var(--red)');return;}const full=ticker.endsWith('.NS')||ticker.endsWith('.BO')?ticker:ticker+'.NS';if([...STOCKS,...ETFS,...customSymbols].some(x=>(x.s||x.ticker)===full)){setMsg('add-msg',full+' already in watchlist.','var(--yellow)');return;}customSymbols.push({ticker:full,name:document.getElementById('add-name').value.trim()||ticker,sector:document.getElementById('add-sector').value.trim()||'Custom'});localStorage.setItem('custom_symbols',JSON.stringify(customSymbols));['add-ticker','add-name','add-sector'].forEach(id=>document.getElementById(id).value='');setMsg('add-msg',full+' added.','var(--green)');toast('Added — refreshing','var(--green)');loadAll();}
+function removeSymbol(){const ticker=document.getElementById('rem-ticker').value.trim().toUpperCase();if(!ticker){setMsg('rem-msg','Enter a ticker.','var(--red)');return;}const full=ticker.endsWith('.NS')||ticker.endsWith('.BO')?ticker:ticker+'.NS';if([...STOCKS,...ETFS].some(x=>x.s===full)){setMsg('rem-msg',full+' is a default symbol.','var(--yellow)');return;}customSymbols=customSymbols.filter(x=>x.ticker!==full);localStorage.setItem('custom_symbols',JSON.stringify(customSymbols));delete allData[full];document.getElementById('rem-ticker').value='';setMsg('rem-msg',full+' removed.','var(--green)');loadAll();}
+function setMsg(id,msg,color){const el=document.getElementById(id);el.textContent=msg;el.style.color=color;}
+setInterval(loadAll,60000);
+loadAll();
+</script>
+</body>
+</html>
