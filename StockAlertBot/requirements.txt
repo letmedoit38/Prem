@@ -1,5 +1,8 @@
+flask>=3.0.0
+twilio>=9.0.0
+pyngrok>=7.0.0
 yfinance>=0.2.50
 requests>=2.31.0
 pytz>=2024.1
-APScheduler==3.10.4
+APScheduler>=3.10.0
 python-dotenv>=1.0.1
