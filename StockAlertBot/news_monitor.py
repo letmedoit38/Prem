@@ -87,7 +87,7 @@ def fetch_news(watched_sectors: Optional[List[str]] = None,
             if sid in seen:
                 continue
 
-            text = (e["title"] + " " + e["summary"]).lower()
+            text  = (e["title"] + " " + e["summary"]).lower()
             level, secs = _score(text, watched_sectors)
             seen.add(sid)
             if level is None:
@@ -102,17 +102,19 @@ def fetch_news(watched_sectors: Optional[List[str]] = None,
 
 
 def format_news(item: NewsItem) -> str:
-    icon = {"high": "🚨", "medium": "📰", "sector": "📌"}.get(item.importance, "📰")
+    """Plain-text format suitable for WhatsApp."""
+    label = {"high": "URGENT", "medium": "Market News", "sector": "Sector Update"}.get(
+        item.importance, "News"
+    )
     sec  = f"\nSectors: {', '.join(item.sectors)}" if item.sectors else ""
-    # Escape special MarkdownV2 chars in dynamic content
-    title   = _esc(item.title)
-    summary = _esc(item.summary[:300])
-    source  = _esc(item.source)
+    summary = item.summary[:400].strip()
     return (
-        f"{icon} *{title}*\n"
-        f"_{source}_{sec}\n\n"
+        f"{label}\n"
+        f"{item.title}\n"
+        f"Source: {item.source}{sec}\n"
+        f"-----------------------------\n"
         f"{summary}\n"
-        f"[Read more]({item.link})"
+        f"Link: {item.link}"
     )
 
 
@@ -174,20 +176,11 @@ def _save_seen(seen: set) -> None:
 def _source_name(url: str) -> str:
     host = urlparse(url).netloc.replace("www.", "")
     for domain, name in [
-        ("economictimes", "Economic Times"),
-        ("moneycontrol",  "Moneycontrol"),
-        ("livemint",      "LiveMint"),
+        ("economictimes",     "Economic Times"),
+        ("moneycontrol",      "Moneycontrol"),
+        ("livemint",          "LiveMint"),
         ("business-standard", "Business Standard"),
     ]:
         if domain in host:
             return name
     return host
-
-
-def _esc(text: str) -> str:
-    """Escape MarkdownV2 special characters (backslash first to avoid double-escaping)."""
-    # Backslash must be processed before other chars
-    text = text.replace("\\", "\\\\")
-    for ch in r"_*[]()~`>#+-=|{}.!":
-        text = text.replace(ch, f"\\{ch}")
-    return text

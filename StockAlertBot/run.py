@@ -1,16 +1,20 @@
 #!/usr/bin/env python3
 """
-Start the Telegram Stock Alert Bot.
+Stock Alert Bot — WhatsApp Edition
+===================================
+Runs a blocking scheduler that automatically sends WhatsApp alerts to
+your number whenever a stock drops >= 20% below its 52-week high, or
+when important market events occur.
 
     python run.py
 
-The bot will:
-  - Respond to commands from your Telegram chat
-  - Send automatic price alerts when a stock drops >= 20% below its 52-week high
-  - Push market news from Indian financial feeds
-  - Send a pre-market briefing at 09:00 IST and a post-market digest at 16:00 IST
+Schedule (Mon-Fri, IST)
+───────────────────────
+  09:00              Pre-market briefing
+  09:15, 10:15 ...   Hourly price check (market hours)
+  Every 30 min       Market news scan
+  16:00              Post-market digest
 """
-import asyncio
 import logging
 import os
 import sys
@@ -19,74 +23,73 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-os.makedirs("logs", exist_ok=True)
+os.makedirs("logs",  exist_ok=True)
+os.makedirs("data",  exist_ok=True)
 
-# Minimal logging — important messages only
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s  %(levelname)-8s  %(name)s — %(message)s",
+    format="%(asctime)s  %(levelname)-8s  %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
     handlers=[
         logging.StreamHandler(sys.stdout),
         logging.FileHandler("logs/bot.log", encoding="utf-8"),
     ],
 )
-# Silence noisy third-party libraries
-for lib in ("httpx", "httpcore", "apscheduler", "telegram"):
+for lib in ("apscheduler", "yfinance", "urllib3", "peewee"):
     logging.getLogger(lib).setLevel(logging.WARNING)
 
 logger = logging.getLogger(__name__)
 
 
-async def main() -> None:
-    # Late imports so env is loaded first
-    from bot import build_app, build_scheduler
-
-    token   = os.getenv("BOT_TOKEN", "")
-    chat_id = os.getenv("CHAT_ID", "")
-
-    if not token:
+def _check_env() -> bool:
+    ok = True
+    if not os.getenv("WHATSAPP_PHONE"):
+        print("\n  ERROR: WHATSAPP_PHONE is not set in .env")
+        ok = False
+    if not os.getenv("CALLMEBOT_APIKEY"):
         print(
-            "\n❌  BOT_TOKEN is missing from .env\n"
-            "   1. Open Telegram and message @BotFather\n"
-            "   2. Send /newbot and follow the prompts\n"
-            "   3. Copy the token and paste it into .env as:\n"
-            "      BOT_TOKEN=123456789:ABCdefGHI...\n"
+            "\n  ERROR: CALLMEBOT_APIKEY is not set in .env\n"
+            "\n  One-time setup:"
+            "\n    1. Save +34 644 21 84 22 as a contact on WhatsApp"
+            "\n    2. Send:  I allow callmebot to send me messages"
+            "\n    3. You will receive your API key via WhatsApp"
+            "\n    4. Add it to .env as:  CALLMEBOT_APIKEY=xxxxxxxx\n"
         )
+        ok = False
+    return ok
+
+
+def main() -> None:
+    if not _check_env():
         sys.exit(1)
 
-    if not chat_id:
-        print(
-            "\n⚠️  CHAT_ID is not set — the bot will answer commands but\n"
-            "   will NOT send automatic price/news push alerts.\n"
-            "   To enable push alerts:\n"
-            "   1. Message @userinfobot on Telegram\n"
-            "   2. It will reply with your numeric chat ID\n"
-            "   3. Add it to .env as:  CHAT_ID=123456789\n"
-        )
+    from scheduler import build_scheduler
+    from whatsapp import send
 
-    app       = build_app()
-    scheduler = build_scheduler(app)
+    scheduler = build_scheduler()
+    jobs = [(j.id, str(j.next_run_time)) for j in scheduler.get_jobs()]
 
-    async with app:
+    logger.info("Stock Alert Bot starting — %d scheduled jobs", len(jobs))
+    for jid, nxt in jobs:
+        logger.info("  %-15s  next run: %s", jid, nxt)
+
+    # Startup notification
+    send(
+        "Stock Alert Bot started!\n"
+        "Watching 10 stocks + 5 ETFs on NSE.\n"
+        "You will receive:\n"
+        "  - Pre-market briefing at 09:00 IST\n"
+        "  - Hourly price checks (market hours)\n"
+        "  - News alerts every 30 min\n"
+        "  - Post-market digest at 16:00 IST\n"
+        "Price drop alert threshold: 20% below 52-week high"
+    )
+
+    try:
         scheduler.start()
-        jobs = [j.id for j in scheduler.get_jobs()]
-        logger.info("Scheduled jobs active: %s", jobs)
-
-        await app.start()
-        await app.updater.start_polling(drop_pending_updates=True)
-        logger.info("Bot is polling. Press Ctrl+C to stop.")
-
-        try:
-            await asyncio.Event().wait()
-        except (KeyboardInterrupt, SystemExit):
-            pass
-        finally:
-            scheduler.shutdown(wait=False)
-            await app.updater.stop()
-            await app.stop()
-
-    logger.info("Bot stopped.")
+    except (KeyboardInterrupt, SystemExit):
+        logger.info("Bot stopped.")
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
