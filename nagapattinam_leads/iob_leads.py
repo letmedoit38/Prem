@@ -786,7 +786,7 @@ def push_to_sheets(df):
 
     # Timestamp in A1
     now_str = datetime.now().strftime("Last sync: %d-%b-%Y %I:%M %p")
-    ws.update("A1", [[now_str]])
+    ws.update([[now_str]], "A1")
 
     # Headers in row 2
     headers = list(df.columns)
@@ -931,7 +931,10 @@ def run():
     print(f"  Log  : {LOG_FILE}")
     print(f"{BOLD}{GREEN}{bar}{RESET}\n")
 
-    input("Press Enter to exit ...")
+    try:
+        input("Press Enter to exit ...")
+    except (EOFError, KeyboardInterrupt):
+        pass
 
 
 # ══════════════════════════════════════════════════════════════
