@@ -1,0 +1,21 @@
+# Secrets — never commit these
+.env
+credentials/
+*.json
+!.env.example
+
+# Data outputs (large files — share via Google Sheets instead)
+data/*.csv
+data/*.xlsx
+data/*.json
+
+# Logs
+logs/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
