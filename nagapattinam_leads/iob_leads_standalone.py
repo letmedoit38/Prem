@@ -125,7 +125,7 @@ MASTER_COLUMNS = [
 #   AUTO-INSTALL PACKAGES  (runs silently on first launch)
 # ════════════════════════════════════════════════════════════════════
 
-import subprocess, sys, os
+import sys, os
 
 _PKGS = {
     "requests":      "requests",
@@ -136,21 +136,21 @@ _PKGS = {
     "bs4":           "beautifulsoup4",
     "lxml":          "lxml",
     "apscheduler":   "apscheduler",
-    "colorama":      "colorama",
 }
 
-def _pip(pkg):
-    subprocess.check_call([sys.executable, "-m", "pip", "install", pkg, "-q"],
-                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
 print("Checking packages ...", flush=True)
+_missing = []
 for _imp, _pkg in _PKGS.items():
     try:
         __import__(_imp)
     except ImportError:
-        print(f"  Installing {_pkg} ...", end=" ", flush=True)
-        _pip(_pkg)
-        print("OK")
+        _missing.append(_pkg)
+
+if _missing:
+    print("\nMissing required packages. Install them with:\n")
+    print(f"    pip install {' '.join(_missing)}\n")
+    sys.exit(1)
+
 print("All packages ready.\n")
 
 # ════════════════════════════════════════════════════════════════════
@@ -172,13 +172,7 @@ import openpyxl
 from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
-try:
-    from colorama import Fore, Style, init as _ci
-    _ci(autoreset=True)
-    G = Fore.GREEN; R = Fore.RED; Y = Fore.YELLOW
-    C = Fore.CYAN;  B = Style.BRIGHT; RS = Style.RESET_ALL
-except ImportError:
-    G = R = Y = C = B = RS = ""
+G = R = Y = C = B = RS = ""
 
 # ════════════════════════════════════════════════════════════════════
 #   OUTPUT PATHS  (data/ and logs/ folders next to this script)
