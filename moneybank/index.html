@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Money Bank — Loan Help from a Banker's Desk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#0B1F3A;--navy2:#13294b;--gold:#E8B628;--gold2:#FFD54A;--ink:#0f172a;--mut:#5b6b82;--bg:#f6f3ea;--card:#fff;--green:#16a34a}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5}
+a{color:inherit}
+.wrap{max-width:560px;margin:0 auto;padding:0 18px 48px}
+.hero{background:radial-gradient(circle at 50% 0%,#1d3d6b 0%,var(--navy) 60%);color:#fff;text-align:center;padding:40px 22px 34px;border-radius:0 0 28px 28px;margin:0 -18px 22px}
+.av{width:86px;height:86px;border-radius:50%;margin:0 auto 14px;background:linear-gradient(135deg,#fff3b0,var(--gold2) 45%,#b8860b);display:flex;align-items:center;justify-content:center;font-family:"Playfair Display",serif;font-weight:900;font-size:46px;color:#2a1c00;box-shadow:0 0 40px rgba(255,213,74,.35)}
+h1{font-family:"Playfair Display",serif;font-size:32px;line-height:1.15}
+.tag{color:var(--gold2);font-weight:700;letter-spacing:.5px;margin-top:6px;font-size:15px}
+.intro{color:#d6deea;font-size:15px;margin-top:14px}
+.badges{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:16px}
+.badges span{font-size:12px;font-weight:700;background:rgba(255,255,255,.1);border:1px solid rgba(255,213,74,.5);color:#fff;padding:6px 11px;border-radius:999px}
+h2{font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--mut);margin:26px 4px 12px;font-weight:800}
+.card{background:var(--card);border-radius:20px;padding:18px;margin-bottom:14px;box-shadow:0 2px 0 rgba(0,0,0,.03),0 8px 24px rgba(15,23,42,.06);border:1px solid #ece6d6}
+.card.feature{border:2px solid var(--gold);position:relative}
+.ribbon{position:absolute;top:-11px;left:16px;background:var(--gold);color:#2a1c00;font-size:11px;font-weight:800;padding:4px 10px;border-radius:999px;letter-spacing:.5px}
+.top{display:flex;gap:14px;align-items:flex-start}
+.ic{flex:0 0 48px;height:48px;border-radius:14px;background:var(--navy);display:flex;align-items:center;justify-content:center;font-size:24px}
+h3{font-size:17px;line-height:1.3}
+.who{font-size:13px;color:var(--mut);margin-top:2px}
+.desc{font-size:14.5px;color:#334155;margin:12px 0}
+ul.pts{list-style:none;margin:0 0 14px}
+ul.pts li{font-size:14px;padding-left:22px;position:relative;margin:5px 0;color:#1e293b}
+ul.pts li:before{content:"✓";position:absolute;left:0;color:var(--green);font-weight:800}
+.buy{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.price{font-weight:800;font-size:22px}
+.price s{font-size:14px;color:var(--mut);font-weight:500;margin-left:6px}
+.off{font-size:11px;font-weight:800;color:var(--green);background:#dcfce7;padding:3px 7px;border-radius:6px;margin-left:6px;vertical-align:middle}
+.btn{display:inline-block;text-decoration:none;background:var(--navy);color:#fff;font-weight:700;font-size:15px;padding:12px 18px;border-radius:12px;white-space:nowrap}
+.btn.gold{background:linear-gradient(180deg,var(--gold2),var(--gold));color:#2a1c00}
+.btn.wa{background:#25D366}
+.btn.yt{background:#e11d1d}
+.links .card{display:flex;align-items:center;gap:14px}
+.links .card p{font-size:13.5px;color:var(--mut)}
+.links .card div{flex:1}
+.why{background:var(--navy);color:#fff}
+.why h3{color:var(--gold2);margin-bottom:8px}
+.why p{font-size:14.5px;color:#d6deea}
+details{background:#fff;border:1px solid #ece6d6;border-radius:14px;padding:14px 16px;margin-bottom:10px}
+summary{font-weight:700;font-size:15px;cursor:pointer}
+details p{font-size:14px;color:#334155;margin-top:8px}
+.share{display:flex;gap:10px;margin-top:6px}
+.share button{flex:1;border:0;background:#fff;border:1px solid #d9d2bf;border-radius:12px;padding:12px;font-weight:700;font-size:14px;cursor:pointer}
+.toast{text-align:center;color:var(--green);font-size:13px;font-weight:700;height:18px;margin-top:6px}
+.foot{text-align:center;font-size:12px;color:var(--mut);margin-top:26px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <div class="av">P</div>
+    <h1>Money Bank</h1>
+    <div class="tag">Loan help from a banker's desk · Porutpaal — The Book of Wealth</div>
+    <p class="intro">I've spent 15+ years in banking, most of it on the credit side, and processed <b>1,000+ loans worth over ₹250 crore</b>: MSME, Mudra, agri and education loans. These simple tools and guides help you get your loan file right, or settle an old loan fairly, without paying a consultant thousands.</p>
+    <div class="badges"><span>🏦 15+ yrs in banking</span><span>📊 1,000+ loans · ₹250 Cr+</span><span>🎓 MBA (Banking &amp; Finance)</span><span>📑 CAIIB certified</span><span>🗣️ Tamil &amp; English</span></div>
+  </header>
+
+  <h2>⭐ Most popular</h2>
+  <div class="card feature">
+    <div class="ribbon">BEST VALUE · 50% OFF</div>
+    <div class="top"><div class="ic">📂</div><div><h3>MSME Loan File Kit</h3><div class="who">For business owners, CAs &amp; loan consultants</div></div></div>
+    <p class="desc">Most business loans aren't rejected — they're <b>returned</b> with queries, and each return costs weeks. This kit shows you what the credit officer checks, before you submit.</p>
+    <ul class="pts">
+      <li>Document checklists: Term loan, CC, Mudra, CGTMSE, Stand-Up India, PMEGP</li>
+      <li>25 reasons banks return loan files — and how to fix each</li>
+      <li>CMA &amp; projection Excel: DSCR, current ratio, MPBF calculated automatically</li>
+    </ul>
+    <div class="buy"><div class="price">₹499<s>₹999</s><span class="off">50% OFF</span></div><a class="btn gold" href="https://kreato.co.in/prem/5147744e-cb3b-4721-a3b4-9ba8b90a010c">Get the kit →</a></div>
+  </div>
+
+  <h2>🧮 Loan calculators · ₹100 each</h2>
+  <div class="card">
+    <div class="top"><div class="ic">✅</div><div><h3>MSME Loan Readiness Checker</h3><div class="who">Planning a business loan?</div></div></div>
+    <p class="desc">Get a readiness score out of 100, an estimate of how much you can borrow, and the government schemes that match your business.</p>
+    <div class="buy"><div class="price">₹100</div><a class="btn" href="https://kreato.co.in/prem/6e873b82-4968-4166-bd76-d9c81c431d50">Check now →</a></div>
+  </div>
+  <div class="card">
+    <div class="top"><div class="ic">🌾</div><div><h3>Agri &amp; Mudra Loan OTS Calculator</h3><div class="who">Loan turned NPA? Planning a one-time settlement?</div></div></div>
+    <p class="desc">Estimates a fair settlement figure, a sensible opening offer and the upper limit — so you go to the bank prepared.</p>
+    <div class="buy"><div class="price">₹100</div><a class="btn" href="https://kreato.co.in/prem/5a25bfd0-d536-482c-8d1a-c42629e3aae5">Calculate →</a></div>
+  </div>
+  <div class="card">
+    <div class="top"><div class="ic">🎓</div><div><h3>Education Loan ARC Settlement Calculator</h3><div class="who">Education loan sold to an ARC?</div></div></div>
+    <p class="desc">Calculates a realistic settlement offer for education loans transferred to an Asset Reconstruction Company — before you pay a consulting fee.</p>
+    <div class="buy"><div class="price">₹100</div><a class="btn" href="https://kreato.co.in/prem/7328851c-aedd-4a0d-a777-e3384656d6cb">Calculate →</a></div>
+  </div>
+
+  <h2>📞 Talk to me</h2>
+  <div class="card">
+    <div class="top"><div class="ic">🎥</div><div><h3>1:1 Call with a Senior Banker</h3><div class="who">30-minute video call</div></div></div>
+    <p class="desc">Share your business loan case and get a straight review: what's missing, what the bank will ask, and your best next step.</p>
+    <div class="buy"><div class="price">₹500</div><a class="btn" href="https://kreato.co.in/prem/session/fa2aadf3-4085-448a-955b-ea25aa8e97ec">Book a call →</a></div>
+  </div>
+
+  <h2>📢 Free daily content</h2>
+  <div class="links">
+    <div class="card"><div><h3>Porutpaal on WhatsApp</h3><p>Daily banking, gold &amp; money insights — simply explained</p></div><a class="btn wa" href="https://whatsapp.com/channel/0029Vb9yDvH6hENrLFC5Ds0U">Follow</a></div>
+    <div class="card"><div><h3>Money Bank on YouTube</h3><p>Loan how-tos in Tamil: Mudra, OTS, KCC, education loans</p></div><a class="btn yt" href="https://www.youtube.com/@MoneyBank">Watch</a></div>
+  </div>
+
+  <div class="card why">
+    <h3>Why trust these tools?</h3>
+    <p>They're built from the same checks a bank's credit desk uses every day. No jargon, no false promises — just what you need to walk into the bank prepared.</p>
+  </div>
+
+  <h2>❓ Common questions</h2>
+  <details><summary>How do I receive the product?</summary><p>Pay securely on Kreato (UPI or card) and download instantly. Your purchase link is also emailed to you.</p></details>
+  <details><summary>Will this guarantee my loan approval?</summary><p>No one can guarantee a sanction — each bank applies its own policy. These tools help you avoid the common mistakes that delay or block a file.</p></details>
+  <details><summary>Is this in Tamil?</summary><p>The products are in English and easy to follow. The YouTube videos and calls are available in Tamil.</p></details>
+
+  <h2>🔗 Share this page</h2>
+  <div class="share"><button id="copy">📋 Copy link</button><button id="copymsg">💬 Copy message</button></div>
+  <div class="toast" id="toast"></div>
+
+  <p class="foot">© Money Bank · Porutpaal — The Book of Wealth<br>Educational tools only. Not financial or legal advice.</p>
+</div>
+<script>
+const t=document.getElementById('toast');
+function cp(text,msg){try{navigator.clipboard.writeText(text).then(()=>{t.textContent=msg},()=>{t.textContent='Copy not allowed here — long-press the address bar to copy.'})}catch(e){t.textContent='Copy not allowed here — long-press the address bar to copy.'}}
+document.getElementById('copy').onclick=()=>cp(location.href,'Link copied ✓');
+document.getElementById('copymsg').onclick=()=>cp('Planning a business loan or settling an old one? A senior banker\'s simple tools & guides — loan file kit, readiness checker, OTS & ARC calculators: '+location.href,'Message copied ✓ — paste it in WhatsApp or SMS');
+</script>
+</body>
+</html>
