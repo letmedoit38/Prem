@@ -177,20 +177,79 @@ footer{text-align:center;font-size:12px;color:var(--on-surface-var);margin-top:3
 .sheet-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
 .snack{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(20px);background:#2F3036;color:#F1F0F7;padding:14px 16px;border-radius:4px;font-size:14px;box-shadow:var(--e2);opacity:0;transition:.2s;z-index:60;max-width:90vw}
 .snack.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* v4 additions */
+.lang{display:flex;background:var(--surface-2);border-radius:18px;padding:3px}
+.lang button{border:0;background:none;height:30px;padding:0 12px;border-radius:15px;font:600 13px "Roboto Flex",sans-serif;color:var(--on-surface-var);cursor:pointer}
+.lang button.on{background:#fff;color:var(--primary);box-shadow:var(--e1)}
+.paths{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+.path{border:0;text-align:left;border-radius:var(--r-xl);padding:18px;cursor:pointer;display:flex;flex-direction:column;gap:6px;font-family:inherit;transition:transform .15s,box-shadow .2s}
+.path:active{transform:scale(.98)}
+.path .ms{font-size:30px}
+.path b{font-size:16px;font-weight:700}.path span{font-size:13px;opacity:.85}
+.path.new{background:var(--primary-container);color:var(--on-primary-container)}
+.path.old{background:#FFECB3;color:#3A2A00}
+.path.on{box-shadow:0 0 0 3px var(--primary)}
+.hide{display:none!important}
+.try{background:#fff;border:1px solid var(--outline-var);border-radius:var(--r-xl);padding:20px;margin-top:4px}
+.try h3{font-size:18px;font-weight:600}
+.q{margin-top:14px}.q p{font-size:14px;font-weight:600;margin-bottom:8px}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opts button{height:36px;padding:0 14px;border-radius:8px;border:1px solid var(--outline-var);background:#fff;font:500 13px "Roboto Flex",sans-serif;cursor:pointer;color:var(--on-surface)}
+.opts button.on{background:var(--primary);border-color:var(--primary);color:#fff}
+.res{margin-top:18px;border-radius:var(--r-l);background:var(--surface-1);padding:18px;display:none}
+.gauge{display:flex;align-items:center;gap:16px}
+.ring{--v:0;width:88px;height:88px;border-radius:50%;background:conic-gradient(var(--c,#146C2E) calc(var(--v)*1%),var(--surface-3) 0);display:grid;place-items:center}
+.ring div{width:70px;height:70px;border-radius:50%;background:var(--surface-1);display:grid;place-items:center;font-size:22px;font-weight:700}
+.lock{margin-top:14px;display:grid;gap:8px}
+.lk{display:flex;align-items:center;gap:10px;background:#fff;border-radius:12px;padding:12px;font-size:14px;color:var(--on-surface-var)}
+.lk .ms{color:var(--outline)}
+.lk i{flex:1;height:10px;border-radius:5px;background:linear-gradient(90deg,var(--surface-3),#fff,var(--surface-3));filter:blur(1px)}
+.pd{position:fixed;inset:0;z-index:55;display:none}
+.pd.open{display:block}
+.pd .in{position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:100%;max-width:600px;max-height:90vh;overflow:auto;background:var(--surface);border-radius:28px 28px 0 0;padding:12px 20px 24px}
+.pd .bg{position:absolute;inset:0;background:rgba(0,0,0,.32)}
+.inside{display:grid;gap:10px;margin-top:12px}
+.inside div{display:flex;gap:12px;background:#fff;border:1px solid var(--outline-var);border-radius:16px;padding:14px;font-size:14px}
+.inside .ms{color:var(--primary)}
+.more-l{display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:600;color:var(--primary);background:none;border:0;cursor:pointer;margin-top:10px;padding:0}
+
+.tabs{display:flex;gap:4px;background:var(--surface-2);border-radius:20px;padding:4px;overflow-x:auto;scrollbar-width:none;margin-bottom:6px}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{flex:1 0 auto;border:0;background:none;height:36px;padding:0 14px;border-radius:16px;font:600 13px "Roboto Flex",sans-serif;color:var(--on-surface-var);cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.tabs button .ms{font-size:18px}
+.tabs button.on{background:#fff;color:var(--primary);box-shadow:var(--e1)}
+.pane{display:none}.pane.on{display:block;animation:fi .25s ease}
+@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.inp{display:flex;align-items:center;border:1px solid var(--outline);border-radius:12px;padding:0 14px;height:52px;margin-top:8px;background:#fff}
+.inp span{font-size:18px;font-weight:600;color:var(--on-surface-var)}
+.inp input{border:0;outline:0;font:500 18px "Roboto Flex",sans-serif;width:100%;padding-left:6px;background:transparent}
+.inp:focus-within{border:2px solid var(--primary)}
+.range{margin-top:6px}.range .lbl{font-size:13px;color:var(--on-surface-var)}
+.range .val{font-size:28px;font-weight:700;letter-spacing:-.4px;margin-top:2px}
+.track{position:relative;height:12px;border-radius:6px;background:var(--surface-3);margin-top:12px;overflow:hidden}
+.track b{position:absolute;top:0;bottom:0;border-radius:6px;background:linear-gradient(90deg,#FFD45E,#F4B400)}
+.ticks{display:flex;justify-content:space-between;font-size:11px;color:var(--outline);margin-top:4px}
+.go{width:100%;margin-top:14px}
+.reasons{display:grid;gap:8px;margin-top:12px}
+.reasons div{display:flex;gap:12px;background:var(--surface-1);border-radius:14px;padding:12px;font-size:14px;align-items:flex-start}
+.reasons .n{flex:0 0 28px;height:28px;border-radius:50%;background:var(--primary);color:#fff;display:grid;place-items:center;font-size:13px;font-weight:700}
+.reasons .lkd{filter:blur(3px);user-select:none;opacity:.7}
+.pct{font-size:12px;color:var(--on-surface-var);text-align:center;margin-top:10px}
 @media (max-width:380px){.hero h1{font-size:26px}.stat b{font-size:17px}.big{font-size:44px}}
 </style>
 </head>
 <body>
 <header class="bar" id="bar"><div class="bar-in">
   <div class="mark">P</div><div class="bar-t">Money Bank</div>
-  <button class="icon-btn" id="shareTop" aria-label="Share"><span class="ms">share</span></button>
+  <div class="lang"><button class="on" data-l="en">EN</button><button data-l="ta">தமிழ்</button></div><button class="icon-btn" id="shareTop" aria-label="Share"><span class="ms">share</span></button>
 </div></header>
 
 <main class="wrap">
   <section class="hero">
     <div class="eyebrow"><span class="ms f" style="font-size:16px">verified</span>From a banker's desk</div>
-    <h1>Need a loan? <em>Stuck with an old one?</em></h1>
-    <p>Simple tools and guides by a senior credit banker, so you walk into the bank prepared and settle old loans fairly.</p>
+    <h1 data-i="h1">Need a loan? <em>Stuck with an old one?</em></h1>
+    <p data-i="hp">Simple tools and guides by a senior credit banker, so you walk into the bank prepared and settle old loans fairly.</p>
     <div class="stats">
       <div class="stat"><b>15+</b><span>years in banking</span></div>
       <div class="stat"><b>1,000+</b><span>loans processed</span></div>
@@ -201,15 +260,100 @@ footer{text-align:center;font-size:12px;color:var(--on-surface-var);margin-top:3
       <span class="chip-d"><span class="ms">workspace_premium</span>CAIIB</span>
       <span class="chip-d"><span class="ms">translate</span>Tamil &amp; English</span>
     </div>
-    <div class="hero-cta">
-      <a class="btn btn-gold" href="#products"><span class="ms">storefront</span>See tools</a>
-      <a class="btn btn-ghost-w" href="#reviews"><span class="ms">star</span>Reviews</a>
+    </section>
+
+
+  <div class="paths">
+    <button class="path new" data-path="new"><span class="ms">add_card</span><b data-i="p1">Get a new loan</b><span data-i="p1s">Business, Mudra, PMEGP</span></button>
+    <button class="path old" data-path="old"><span class="ms">handshake</span><b data-i="p2">Settle an old loan</b><span data-i="p2s">OTS · ARC · NPA</span></button>
+  </div>
+
+  <div class="sec" id="trial"><div><h2 data-i="tt">Try free before you buy</h2><p data-i="ts">Instant preview · no payment, no sign-up</p></div></div>
+  <section class="try">
+    <div class="tabs" role="tablist">
+      <button class="on" data-t="t1"><span class="ms">fact_check</span><span data-i="tb1">Loan check</span></button>
+      <button data-t="t2"><span class="ms">agriculture</span><span data-i="tb2">OTS estimate</span></button>
+      <button data-t="t3"><span class="ms">school</span><span data-i="tb3">ARC estimate</span></button>
+      <button data-t="t4"><span class="ms">folder_special</span><span data-i="tb4">Kit sample</span></button>
+    </div>
+
+    <div class="pane on" id="t1">
+    <h3 data-i="th">How ready is your loan file?</h3>
+    <div class="q" data-q="0"><p data-i="q1">How old is your business?</p><div class="opts"><button data-s="5">New</button><button data-s="12">1–2 yrs</button><button data-s="20">3+ yrs</button></div></div>
+    <div class="q" data-q="1"><p data-i="q2">Your CIBIL score?</p><div class="opts"><button data-s="0">Below 650</button><button data-s="12">650–749</button><button data-s="22">750+</button><button data-s="8">Don't know</button></div></div>
+    <div class="q" data-q="2"><p data-i="q3">GST / ITR filed regularly?</p><div class="opts"><button data-s="18">Yes</button><button data-s="8">Partly</button><button data-s="0">No</button></div></div>
+    <div class="q" data-q="3"><p data-i="q4">Do sales go through your bank account?</p><div class="opts"><button data-s="20">Mostly</button><button data-s="8">Some</button><button data-s="0">Mostly cash</button></div></div>
+    <div class="q" data-q="4"><p data-i="q5">Own money (margin) ready?</p><div class="opts"><button data-s="18">Yes, 20%+</button><button data-s="9">Some</button><button data-s="0">No</button></div></div>
+    <div class="res" id="res">
+      <div class="gauge"><div class="ring" id="ring"><div id="sc">0</div></div><div><b id="band" style="font-size:18px">—</b><div class="sub" id="bandTxt"></div></div></div>
+      <div class="lock">
+        <div class="lk"><span class="ms">lock</span><span data-i="l1">How much you can borrow</span><i></i></div>
+        <div class="lk"><span class="ms">lock</span><span data-i="l2">Govt schemes you qualify for</span><i></i></div>
+        <div class="lk"><span class="ms">lock</span><span data-i="l3">Your 5 fixes before applying</span><i></i></div>
+      </div>
+      <a class="btn btn-filled" style="width:100%;margin-top:14px" href="https://kreato.co.in/prem/6e873b82-4968-4166-bd76-d9c81c431d50"><span class="ms">lock_open</span><span data-i="ul">Unlock full report · ₹100</span></a>
+      <div class="help" data-i="disc">Indicative score from your answers. Not a loan decision.</div>
+    </div>
+  </div>
+
+    <div class="pane" id="t2">
+      <h3 data-i="o1">What might your OTS cost?</h3>
+      <div class="sub" data-i="o1s">Agri or Mudra loan that turned NPA</div>
+      <div class="q"><p data-i="o2">Principal outstanding</p><div class="inp"><span>₹</span><input id="otsP" inputmode="numeric" placeholder="e.g. 3,00,000"></div></div>
+      <div class="q"><p data-i="o3">How long has it been NPA?</p><div class="opts" id="otsY"><button data-v="1">&lt; 2 yrs</button><button data-v="2">2–4 yrs</button><button data-v="3">4+ yrs</button></div></div>
+      <button class="btn btn-tonal go" id="otsGo"><span class="ms">calculate</span><span data-i="est">See estimate</span></button>
+      <div class="res" id="otsR">
+        <div class="range"><div class="lbl" data-i="rl">Likely settlement range</div><div class="val" id="otsV">—</div>
+        <div class="track"><b id="otsB"></b></div><div class="ticks"><span>0%</span><span>50%</span><span>100% of principal</span></div></div>
+        <div class="lock">
+          <div class="lk"><span class="ms">lock</span><span data-i="ol1">Your exact opening offer</span><i></i></div>
+          <div class="lk"><span class="ms">lock</span><span data-i="ol2">Your upper limit (walk-away figure)</span><i></i></div>
+          <div class="lk"><span class="ms">lock</span><span data-i="ol3">Interest &amp; charges you can ask to waive</span><i></i></div>
+        </div>
+        <a class="btn btn-filled go" href="https://kreato.co.in/prem/5a25bfd0-d536-482c-8d1a-c42629e3aae5"><span class="ms">lock_open</span><span data-i="ul2">Get my exact figures · ₹100</span></a>
+        <div class="help" data-i="disc2">Broad indicative range only. Actual settlement depends on your bank's policy.</div>
+      </div>
+    </div>
+
+    <div class="pane" id="t3">
+      <h3 data-i="a1">Education loan with an ARC?</h3>
+      <div class="sub" data-i="a1s">See a broad settlement range in seconds</div>
+      <div class="q"><p data-i="a2">Total amount the ARC is asking</p><div class="inp"><span>₹</span><input id="arcP" inputmode="numeric" placeholder="e.g. 8,00,000"></div></div>
+      <div class="q"><p data-i="a3">When was the loan sold to the ARC?</p><div class="opts" id="arcY"><button data-v="1">This year</button><button data-v="2">1–3 yrs ago</button><button data-v="3">3+ yrs ago</button></div></div>
+      <button class="btn btn-tonal go" id="arcGo"><span class="ms">calculate</span><span data-i="est">See estimate</span></button>
+      <div class="res" id="arcR">
+        <div class="range"><div class="lbl" data-i="rl">Likely settlement range</div><div class="val" id="arcV">—</div>
+        <div class="track"><b id="arcB"></b></div><div class="ticks"><span>0%</span><span>50%</span><span>100% of claim</span></div></div>
+        <div class="lock">
+          <div class="lk"><span class="ms">lock</span><span data-i="al1">Your realistic offer amount</span><i></i></div>
+          <div class="lk"><span class="ms">lock</span><span data-i="al2">Step-by-step negotiation plan</span><i></i></div>
+          <div class="lk"><span class="ms">lock</span><span data-i="al3">What to get in writing before you pay</span><i></i></div>
+        </div>
+        <a class="btn btn-filled go" href="https://kreato.co.in/prem/7328851c-aedd-4a0d-a777-e3384656d6cb"><span class="ms">lock_open</span><span data-i="ul3">Get my exact offer · ₹100</span></a>
+        <div class="help" data-i="disc3">Broad indicative range only. Each ARC decides case by case.</div>
+      </div>
+    </div>
+
+    <div class="pane" id="t4">
+      <h3 data-i="k1">Why do banks return loan files?</h3>
+      <div class="sub" data-i="k1s">5 free from the kit's list of 25</div>
+      <div class="reasons">
+        <div><span class="n">1</span><span><b>Sales don't match.</b> ITR, GST and bank statement tell different stories.</span></div>
+        <div><span class="n">2</span><span><b>Cash-heavy business.</b> The bank lends on what it can see in your account.</span></div>
+        <div><span class="n">3</span><span><b>Udyam mismatch.</b> Your registered activity differs from the loan purpose.</span></div>
+        <div><span class="n">4</span><span><b>Weak quotations.</b> No GST, old date, or not from an authorised dealer.</span></div>
+        <div><span class="n">5</span><span><b>Margin unexplained.</b> Your own money appears with no clear source.</span></div>
+        <div class="lkd"><span class="n">6</span><span><b>●●●●●● ●●●●</b> ●●●●●●● ●●●● ●●●●● ●●●● ●●●●●●</span></div>
+        <div class="lkd"><span class="n">7</span><span><b>●●●●● ●●●●●●●</b> ●●●● ●●●●●●●● ●●● ●●●●●</span></div>
+      </div>
+      <div class="pct" data-i="kp">+ 20 more reasons with fixes, 6 checklists &amp; the CMA Excel</div>
+      <a class="btn btn-filled go" href="https://kreato.co.in/prem/5147744e-cb3b-4721-a3b4-9ba8b90a010c"><span class="ms">lock_open</span><span data-i="ul4">Get the full kit · ₹499</span></a>
     </div>
   </section>
 
   <div class="sec" id="products"><div><h2>Most popular</h2><p>Get your loan file right the first time</p></div></div>
 
-  <article class="card feat">
+  <article class="card feat" data-for="new">
     <span class="badge"><span class="ms f" style="font-size:16px">local_fire_department</span>Best value · 50% off</span>
     <div class="row" style="margin-top:14px">
       <div class="av y"><span class="ms">folder_special</span></div>
@@ -221,26 +365,27 @@ footer{text-align:center;font-size:12px;color:var(--on-surface-var);margin-top:3
       <li><span class="ms f">check_circle</span>25 reasons banks return files — and how to fix each</li>
       <li><span class="ms f">check_circle</span>CMA &amp; projection Excel: DSCR, current ratio, MPBF auto-calculated</li>
     </ul>
+    <button class="more-l" data-open="kit"><span class="ms" style="font-size:18px">visibility</span><span data-i="wi">See what's inside</span></button>
     <div class="foot"><div class="price">₹499<s>₹999</s><small>You save ₹500</small></div><a class="btn btn-filled" href="https://kreato.co.in/prem/5147744e-cb3b-4721-a3b4-9ba8b90a010c">Get the kit<span class="ms">arrow_forward</span></a></div>
   </article>
 
-  <div class="sec"><div><h2>Loan calculators</h2><p>₹100 each · instant results</p></div></div>
+  <div class="sec" data-for="both"><div><h2>Loan calculators</h2><p>₹100 each · instant results</p></div></div>
 
-  <article class="card">
+  <article class="card" data-for="new">
     <div class="row"><div class="av b"><span class="ms">fact_check</span></div>
       <div><h3>MSME Loan Readiness Checker</h3><div class="sub">Planning a business loan?</div><div class="prr" data-prod="Loan Readiness Checker"><span class="nw">New</span>Be the first to rate</div></div></div>
     <p class="desc">A readiness score out of 100, an estimate of how much you can borrow, and the government schemes that match your business.</p>
     <div class="foot"><div class="price">₹100</div><a class="btn btn-tonal" href="https://kreato.co.in/prem/6e873b82-4968-4166-bd76-d9c81c431d50">Check now<span class="ms">arrow_forward</span></a></div>
   </article>
 
-  <article class="card">
+  <article class="card" data-for="old">
     <div class="row"><div class="av gr"><span class="ms">agriculture</span></div>
       <div><h3>Agri &amp; Mudra Loan OTS Calculator</h3><div class="sub">Loan turned NPA? Planning a one-time settlement?</div><div class="prr" data-prod="Agri &amp; Mudra OTS Calculator"><span class="nw">New</span>Be the first to rate</div></div></div>
     <p class="desc">A fair settlement figure, a sensible opening offer and the upper limit — so you go to the bank prepared.</p>
     <div class="foot"><div class="price">₹100</div><a class="btn btn-tonal" href="https://kreato.co.in/prem/5a25bfd0-d536-482c-8d1a-c42629e3aae5">Calculate<span class="ms">arrow_forward</span></a></div>
   </article>
 
-  <article class="card">
+  <article class="card" data-for="old">
     <div class="row"><div class="av p"><span class="ms">school</span></div>
       <div><h3>Education Loan ARC Settlement Calculator</h3><div class="sub">Education loan sold to an ARC?</div><div class="prr" data-prod="Education Loan ARC Calculator"><span class="nw">New</span>Be the first to rate</div></div></div>
     <p class="desc">A realistic settlement offer for education loans transferred to an Asset Reconstruction Company — before you pay a consulting fee.</p>
@@ -249,7 +394,7 @@ footer{text-align:center;font-size:12px;color:var(--on-surface-var);margin-top:3
 
   <div class="sec"><div><h2>Talk to a banker</h2><p>Personal review of your case</p></div></div>
 
-  <article class="card">
+  <article class="card" data-for="both">
     <div class="row"><div class="av t"><span class="ms">video_call</span></div>
       <div><h3>1:1 Call with a Senior Banker</h3><div class="sub">30-minute video call</div><div class="prr" data-prod="1:1 Banker Call"><span class="nw">New</span>Be the first to rate</div></div></div>
     <p class="desc">Share your business loan case and get a straight review: what's missing, what the bank will ask, and your best next step.</p>
@@ -324,6 +469,19 @@ footer{text-align:center;font-size:12px;color:var(--on-surface-var);margin-top:3
   <div class="msg" id="wMsg"></div>
   <div class="sheet-actions"><button type="button" class="btn" style="background:none;color:var(--primary)" id="wcancel">Cancel</button><button type="submit" class="btn btn-filled">Post</button></div>
 </form>
+
+<div class="pd" id="pd"><div class="bg" data-close></div><div class="in">
+  <div class="handle"></div>
+  <span class="badge">MSME Loan File Kit</span>
+  <h3 style="font-size:22px;font-weight:500;margin-top:10px">What's inside</h3>
+  <div class="inside">
+    <div><span class="ms">picture_as_pdf</span><span><b>9-page guide (PDF)</b><br>Checklists for 6 loan types + 25 return reasons with fixes + pre-submission self-check</span></div>
+    <div><span class="ms">table_chart</span><span><b>CMA &amp; projection Excel</b><br>Enter 2 years' actuals → 5-year projections, DSCR, current ratio, TOL/TNW, MPBF</span></div>
+    <div><span class="ms">verified</span><span><b>Credit Check sheet</b><br>PASS / REVIEW flags on every ratio the bank will question</span></div>
+    <div><span class="ms">bolt</span><span><b>Instant download</b><br>ZIP with PDF + Excel. Works on any laptop with Excel or Google Sheets</span></div>
+  </div>
+  <div class="foot"><div class="price">₹499<s>₹999</s></div><a class="btn btn-filled" href="https://kreato.co.in/prem/5147744e-cb3b-4721-a3b4-9ba8b90a010c">Get the kit<span class="ms">arrow_forward</span></a></div>
+</div></div>
 <div class="snack" id="snack"></div>
 
 <script>
@@ -371,6 +529,41 @@ $('sheet').onsubmit=async e=>{e.preventDefault();const m=$('wMsg');
 async function share(){const u=location.href;try{await navigator.clipboard.writeText(u);snack('Link copied')}catch(e){snack('Copy the link from the address bar')}}
 $('shareTop').onclick=share;
 addEventListener('scroll',()=>$('bar').classList.toggle('sc',scrollY>8),{passive:true});
+
+// paths
+document.querySelectorAll('.path').forEach(b=>b.onclick=()=>{const p=b.dataset.path,on=!b.classList.contains('on');document.querySelectorAll('.path').forEach(x=>x.classList.remove('on'));if(on)b.classList.add('on');
+ document.querySelectorAll('[data-for]').forEach(e=>{const f=e.dataset.for;e.classList.toggle('hide',on&&f!=='both'&&f!==p)});
+ document.getElementById(on&&p==='old'?'products':'trial').scrollIntoView({behavior:'smooth',block:'start'});
+ $('trial').classList.toggle('hide',on&&p==='old');document.querySelector('.try').classList.toggle('hide',on&&p==='old');});
+// quick check
+const ans={};document.querySelectorAll('.q').forEach(q=>q.querySelectorAll('button').forEach(b=>b.onclick=()=>{q.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x==b));ans[q.dataset.q]=+b.dataset.s;
+ if(Object.keys(ans).length===5){const s=Object.values(ans).reduce((a,v)=>a+v,0);$('res').style.display='block';const r=$('ring');r.style.setProperty('--v',s);
+ const [band,txt,c]=s>=75?[T('b1'),T('b1t'),'#146C2E']:s>=50?[T('b2'),T('b2t'),'#B26A00']:[T('b3'),T('b3t'),'#B3261E'];r.style.setProperty('--c',c);$('sc').textContent=s;$('band').textContent=band;$('band').style.color=c;$('bandTxt').textContent=txt;$('res').scrollIntoView({behavior:'smooth',block:'nearest'})}}));
+// product detail
+document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>$('pd').classList.add('open'));
+document.querySelector('#pd [data-close]').onclick=()=>$('pd').classList.remove('open');
+// tabs
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x==b));document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('on',p.id==b.dataset.t))});
+function fmt(n){if(n>=1e7)return '₹'+(n/1e7).toFixed(1)+' Cr';if(n>=1e5)return '₹'+(n/1e5).toFixed(1)+' L';return '₹'+Math.round(n/1000)+'K'}
+function pickOne(id){let v=0;document.querySelectorAll('#'+id+' button').forEach(b=>b.onclick=()=>{v=+b.dataset.v;document.querySelectorAll('#'+id+' button').forEach(x=>x.classList.toggle('on',x==b))});return()=>v}
+const otsY=pickOne('otsY'),arcY=pickOne('arcY');
+function teaser(inp,yr,band,out,bar,res){const P=+($(inp).value||'').replace(/[^0-9]/g,'');const y=yr();if(!P||!y){snack(LANG==='ta'?'தொகையும் காலமும் தேர்வு செய்யுங்கள்':'Enter the amount and choose a period');return}
+ const [lo,hi]=band[y];$(out).textContent=fmt(P*lo)+' – '+fmt(P*hi);$(bar).style.left=(lo*100)+'%';$(bar).style.width=((hi-lo)*100)+'%';$(res).style.display='block';$(res).scrollIntoView({behavior:'smooth',block:'nearest'})}
+$('otsGo').onclick=()=>teaser('otsP',otsY,{1:[.55,.95],2:[.45,.85],3:[.35,.75]},'otsV','otsB','otsR');
+$('arcGo').onclick=()=>teaser('arcP',arcY,{1:[.4,.85],2:[.3,.75],3:[.2,.65]},'arcV','arcB','arcR');
+['otsP','arcP'].forEach(id=>$(id).addEventListener('input',e=>{const d=e.target.value.replace(/[^0-9]/g,'');e.target.value=d?(+d).toLocaleString('en-IN'):''}));
+
+// i18n
+const TA={h1:'லோன் வேணுமா? <em>பழைய லோன் சிக்கலா?</em>',hp:'மூத்த வங்கியாளர் உருவாக்கிய எளிய கருவிகள் — வங்கிக்கு தயாராகச் செல்லவும், பழைய லோனை நியாயமாக settle செய்யவும்.',
+p1:'புதிய லோன்',p1s:'Business, Mudra, PMEGP',p2:'பழைய லோன் settle',p2s:'OTS · ARC · NPA',tt:'இலவசம்: 60 வினாடி லோன் சோதனை',ts:'பணம் இல்லை, பதிவு இல்லை',th:'உங்கள் லோன் ஃபைல் எவ்வளவு தயார்?',
+q1:'உங்கள் தொழில் எத்தனை வருடம்?',q2:'உங்கள் CIBIL score?',q3:'GST / ITR முறையாக தாக்கல்?',q4:'விற்பனை பணம் வங்கி கணக்கில் வருகிறதா?',q5:'சொந்த பணம் (margin) தயாரா?',
+l1:'எவ்வளவு லோன் கிடைக்கும்',l2:'உங்களுக்கு பொருந்தும் அரசு திட்டங்கள்',l3:'Apply செய்வதற்கு முன் 5 திருத்தங்கள்',ul:'முழு அறிக்கை · ₹100',disc:'உங்கள் பதில்களின் அடிப்படையில் ஒரு மதிப்பீடு மட்டுமே. லோன் முடிவு அல்ல.',wi:'உள்ளே என்ன இருக்கிறது',
+b1:'நல்ல நிலை',b1t:'சில திருத்தங்களுடன் apply செய்யலாம்.',b2:'கவனம் தேவை',b2t:'சில குறைகள் file-ஐ தாமதப்படுத்தலாம்.',b3:'தயாராக இல்லை',b3t:'முதலில் அடிப்படைகளை சரிசெய்யுங்கள்.',tb1:'லோன் சோதனை',tb2:'OTS மதிப்பீடு',tb3:'ARC மதிப்பீடு',tb4:'Kit மாதிரி',o1:'உங்கள் OTS எவ்வளவு ஆகலாம்?',o1s:'NPA ஆன விவசாய / முத்ரா லோன்',o2:'நிலுவை அசல் தொகை',o3:'NPA ஆகி எவ்வளவு காலம்?',est:'மதிப்பீடு பார்க்க',rl:'சாத்தியமான settlement வரம்பு',ol1:'உங்கள் சரியான முதல் offer',ol2:'அதிகபட்ச வரம்பு',ol3:'தள்ளுபடி கேட்கக்கூடிய வட்டி & கட்டணங்கள்',ul2:'சரியான தொகை · ₹100',disc2:'பரந்த மதிப்பீடு மட்டுமே. வங்கியின் கொள்கையைப் பொறுத்தது.',a1:'ARC-யிடம் கல்விக் கடனா?',a1s:'சில வினாடிகளில் settlement வரம்பு',a2:'ARC கேட்கும் மொத்த தொகை',a3:'லோன் ARC-க்கு எப்போது விற்கப்பட்டது?',al1:'உங்கள் யதார்த்தமான offer தொகை',al2:'படிப்படியான பேச்சுவார்த்தை திட்டம்',al3:'பணம் செலுத்தும் முன் எழுத்தில் பெற வேண்டியவை',ul3:'சரியான offer · ₹100',disc3:'பரந்த மதிப்பீடு மட்டுமே. ARC ஒவ்வொரு வழக்கையும் தனியாக முடிவு செய்யும்.',k1:'வங்கிகள் ஏன் லோன் ஃபைலை திருப்புகின்றன?',k1s:'25 காரணங்களில் 5 இலவசம்',kp:'+ 20 காரணங்கள், 6 checklists & CMA Excel',ul4:'முழு Kit · ₹499'};
+const EN={b1:'Looking good',b1t:'You can apply after a few fixes.',b2:'Needs attention',b2t:'A few gaps may delay your file.',b3:'Not ready yet',b3t:'Fix the basics before you apply.'};
+let LANG='en';const ORIG={};document.querySelectorAll('[data-i]').forEach(e=>ORIG[e.dataset.i]=e.innerHTML);
+function T(k){return LANG==='ta'&&TA[k]?TA[k]:(EN[k]||ORIG[k]||k)}
+document.querySelectorAll('.lang button').forEach(b=>b.onclick=()=>{LANG=b.dataset.l;document.querySelectorAll('.lang button').forEach(x=>x.classList.toggle('on',x==b));
+ document.querySelectorAll('[data-i]').forEach(e=>{const k=e.dataset.i;e.innerHTML=LANG==='ta'&&TA[k]?TA[k]:ORIG[k]});document.documentElement.lang=LANG});
 load();
 </script>
 </body>
