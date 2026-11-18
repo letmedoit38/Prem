@@ -3,131 +3,375 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Money Bank — Loan Help from a Banker's Desk</title>
+<title>Money Bank — Loan help from a banker's desk</title>
+<meta name="description" content="Loan tools and guides by a senior banker: MSME loan file kit, loan readiness checker, OTS and ARC settlement calculators, 1:1 banker calls.">
+<meta property="og:title" content="Money Bank — Loan help from a banker's desk">
+<meta property="og:description" content="Need a loan? Stuck with an old loan? Tools by a senior banker from ₹100.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,400;8..144,500;8..144,600;8..144,700&family=Roboto+Serif:opsz,wght@8..144,700&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,500,0..1,0&display=swap" rel="stylesheet">
 <style>
-:root{--navy:#0B1F3A;--navy2:#13294b;--gold:#E8B628;--gold2:#FFD54A;--ink:#0f172a;--mut:#5b6b82;--bg:#f6f3ea;--card:#fff;--green:#16a34a}
+:root{
+  --primary:#1A4D8F;--on-primary:#fff;--primary-container:#D6E3FF;--on-primary-container:#001B3E;
+  --secondary-container:#FFE08A;--on-secondary-container:#3A2A00;--tertiary:#7A5900;
+  --surface:#FBF9FE;--surface-1:#F3F2F8;--surface-2:#EDEDF4;--surface-3:#E6E7EF;
+  --on-surface:#1A1B20;--on-surface-var:#44474F;--outline:#74777F;--outline-var:#C4C6D0;
+  --success:#146C2E;--success-container:#C4EED0;--star:#F4B400;
+  --r-xl:28px;--r-l:16px;--r-m:12px;
+  --e1:0 1px 2px rgba(0,0,0,.3),0 1px 3px 1px rgba(0,0,0,.15);
+  --e2:0 1px 2px rgba(0,0,0,.3),0 2px 6px 2px rgba(0,0,0,.15);
+}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5}
-a{color:inherit}
-.wrap{max-width:560px;margin:0 auto;padding:0 18px 48px}
-.hero{background:radial-gradient(circle at 50% 0%,#1d3d6b 0%,var(--navy) 60%);color:#fff;text-align:center;padding:40px 22px 34px;border-radius:0 0 28px 28px;margin:0 -18px 22px}
-.av{width:86px;height:86px;border-radius:50%;margin:0 auto 14px;background:linear-gradient(135deg,#fff3b0,var(--gold2) 45%,#b8860b);display:flex;align-items:center;justify-content:center;font-family:"Playfair Display",serif;font-weight:900;font-size:46px;color:#2a1c00;box-shadow:0 0 40px rgba(255,213,74,.35)}
-h1{font-family:"Playfair Display",serif;font-size:32px;line-height:1.15}
-.tag{color:var(--gold2);font-weight:700;letter-spacing:.5px;margin-top:6px;font-size:15px}
-.intro{color:#d6deea;font-size:15px;margin-top:14px}
-.badges{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:16px}
-.badges span{font-size:12px;font-weight:700;background:rgba(255,255,255,.1);border:1px solid rgba(255,213,74,.5);color:#fff;padding:6px 11px;border-radius:999px}
-h2{font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--mut);margin:26px 4px 12px;font-weight:800}
-.card{background:var(--card);border-radius:20px;padding:18px;margin-bottom:14px;box-shadow:0 2px 0 rgba(0,0,0,.03),0 8px 24px rgba(15,23,42,.06);border:1px solid #ece6d6}
-.card.feature{border:2px solid var(--gold);position:relative}
-.ribbon{position:absolute;top:-11px;left:16px;background:var(--gold);color:#2a1c00;font-size:11px;font-weight:800;padding:4px 10px;border-radius:999px;letter-spacing:.5px}
-.top{display:flex;gap:14px;align-items:flex-start}
-.ic{flex:0 0 48px;height:48px;border-radius:14px;background:var(--navy);display:flex;align-items:center;justify-content:center;font-size:24px}
-h3{font-size:17px;line-height:1.3}
-.who{font-size:13px;color:var(--mut);margin-top:2px}
-.desc{font-size:14.5px;color:#334155;margin:12px 0}
-ul.pts{list-style:none;margin:0 0 14px}
-ul.pts li{font-size:14px;padding-left:22px;position:relative;margin:5px 0;color:#1e293b}
-ul.pts li:before{content:"✓";position:absolute;left:0;color:var(--green);font-weight:800}
-.buy{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.price{font-weight:800;font-size:22px}
-.price s{font-size:14px;color:var(--mut);font-weight:500;margin-left:6px}
-.off{font-size:11px;font-weight:800;color:var(--green);background:#dcfce7;padding:3px 7px;border-radius:6px;margin-left:6px;vertical-align:middle}
-.btn{display:inline-block;text-decoration:none;background:var(--navy);color:#fff;font-weight:700;font-size:15px;padding:12px 18px;border-radius:12px;white-space:nowrap}
-.btn.gold{background:linear-gradient(180deg,var(--gold2),var(--gold));color:#2a1c00}
-.btn.wa{background:#25D366}
-.btn.yt{background:#e11d1d}
-.links .card{display:flex;align-items:center;gap:14px}
-.links .card p{font-size:13.5px;color:var(--mut)}
-.links .card div{flex:1}
-.why{background:var(--navy);color:#fff}
-.why h3{color:var(--gold2);margin-bottom:8px}
-.why p{font-size:14.5px;color:#d6deea}
-details{background:#fff;border:1px solid #ece6d6;border-radius:14px;padding:14px 16px;margin-bottom:10px}
-summary{font-weight:700;font-size:15px;cursor:pointer}
-details p{font-size:14px;color:#334155;margin-top:8px}
-.share{display:flex;gap:10px;margin-top:6px}
-.share button{flex:1;border:0;background:#fff;border:1px solid #d9d2bf;border-radius:12px;padding:12px;font-weight:700;font-size:14px;cursor:pointer}
-.toast{text-align:center;color:var(--green);font-size:13px;font-weight:700;height:18px;margin-top:6px}
-.foot{text-align:center;font-size:12px;color:var(--mut);margin-top:26px}
+html{scroll-behavior:smooth}
+body{font-family:"Roboto Flex",Roboto,system-ui,sans-serif;background:var(--surface);color:var(--on-surface);-webkit-font-smoothing:antialiased;line-height:1.5}
+a{color:inherit;text-decoration:none}
+.ms{font-family:"Material Symbols Rounded";font-weight:normal;font-style:normal;font-size:24px;line-height:1;display:inline-block;-webkit-font-feature-settings:"liga";font-feature-settings:"liga";font-variation-settings:"FILL" 0,"wght" 500}
+.ms.f{font-variation-settings:"FILL" 1,"wght" 500}
+.wrap{max-width:600px;margin:0 auto;padding:0 16px 120px}
+
+/* Top app bar */
+.bar{position:sticky;top:0;z-index:20;background:rgba(251,249,254,.92);backdrop-filter:blur(12px);border-bottom:1px solid transparent;transition:border-color .2s}
+.bar.sc{border-color:var(--outline-var)}
+.bar-in{max-width:600px;margin:0 auto;height:64px;display:flex;align-items:center;gap:12px;padding:0 16px}
+.mark{width:36px;height:36px;border-radius:50%;background:conic-gradient(from 210deg,#FFE08A,#F4B400,#B8860B,#FFE08A);display:grid;place-items:center;font-family:"Roboto Serif",serif;font-weight:700;color:#2A1C00;font-size:20px}
+.bar-t{font-size:20px;font-weight:600;letter-spacing:-.2px;flex:1}
+.icon-btn{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;border:0;background:none;color:var(--on-surface-var);cursor:pointer}
+.icon-btn:hover{background:rgba(68,71,79,.08)}
+
+/* Hero */
+.hero{margin-top:12px;border-radius:var(--r-xl);background:linear-gradient(160deg,#173F78 0%,#0E2A55 60%,#0A1F40 100%);color:#fff;padding:28px 24px 24px;position:relative;overflow:hidden}
+.hero:after{content:"";position:absolute;right:-60px;top:-60px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(244,180,0,.35),transparent 70%)}
+.eyebrow{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:#FFE08A}
+.hero h1{font-size:30px;line-height:1.15;font-weight:700;letter-spacing:-.5px;margin:10px 0 10px}
+.hero h1 em{font-style:normal;color:#FFD45E}
+.hero p{color:#C9D6EE;font-size:15px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:20px}
+.stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:var(--r-l);padding:12px 10px}
+.stat b{display:block;font-size:20px;font-weight:700;color:#fff}
+.stat span{font-size:12px;color:#B9C8E4}
+.creds{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.chip-d{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:8px;border:1px solid rgba(255,255,255,.28);font-size:13px;font-weight:500;color:#fff}
+.chip-d .ms{font-size:18px;color:#FFD45E}
+.hero-cta{display:flex;gap:8px;margin-top:20px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 24px;border-radius:20px;font-size:14px;font-weight:600;letter-spacing:.1px;border:0;cursor:pointer;transition:box-shadow .2s,filter .2s;white-space:nowrap}
+.btn .ms{font-size:18px}
+.btn-filled{background:var(--primary);color:#fff}
+.btn-filled:hover{box-shadow:var(--e1)}
+.btn-gold{background:#FFD45E;color:#2A1C00}
+.btn-gold:hover{box-shadow:var(--e1);filter:brightness(1.03)}
+.btn-tonal{background:var(--secondary-container);color:var(--on-secondary-container)}
+.btn-outline{background:transparent;border:1px solid var(--outline);color:var(--primary)}
+.btn-ghost-w{background:rgba(255,255,255,.12);color:#fff}
+
+/* Section titles */
+.sec{margin:32px 4px 12px;display:flex;align-items:flex-end;justify-content:space-between}
+.sec h2{font-size:22px;font-weight:600;letter-spacing:-.2px}
+.sec p{font-size:14px;color:var(--on-surface-var)}
+
+/* Product cards */
+.card{background:#fff;border-radius:var(--r-xl);padding:20px;margin-bottom:12px;border:1px solid var(--outline-var);transition:box-shadow .2s}
+.card:hover{box-shadow:var(--e1)}
+.card.feat{border:0;background:linear-gradient(180deg,#FFF8E1 0%,#fff 55%);box-shadow:var(--e1);position:relative}
+.badge{display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 10px;border-radius:12px;background:var(--secondary-container);color:var(--on-secondary-container);font-size:12px;font-weight:600}
+.badge.g{background:var(--success-container);color:var(--success)}
+.row{display:flex;gap:16px;align-items:flex-start}
+.av{flex:0 0 52px;height:52px;border-radius:16px;display:grid;place-items:center}
+.av .ms{font-size:28px}
+.av.b{background:var(--primary-container);color:var(--primary)}
+.av.y{background:#FFECB3;color:#7A5900}
+.av.gr{background:var(--success-container);color:var(--success)}
+.av.p{background:#EADDFF;color:#4F378B}
+.av.t{background:#D1E8FF;color:#00497D}
+.card h3{font-size:18px;font-weight:600;line-height:1.3;letter-spacing:-.1px}
+.sub{font-size:13px;color:var(--on-surface-var);margin-top:2px}
+.prr{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:13px;color:var(--on-surface-var)}
+.prr .stars{color:var(--star);font-size:14px;letter-spacing:1px}
+.nw{font-size:11px;font-weight:600;color:var(--primary);background:var(--primary-container);padding:2px 8px;border-radius:6px}
+.desc{font-size:14.5px;color:#2E3036;margin:14px 0 0}
+.feats{list-style:none;margin:12px 0 0;display:grid;gap:8px}
+.feats li{display:flex;gap:10px;font-size:14px;color:#2E3036;align-items:flex-start}
+.feats .ms{font-size:20px;color:var(--success)}
+.foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:18px;padding-top:16px;border-top:1px solid var(--surface-3)}
+.price{font-size:24px;font-weight:700;letter-spacing:-.3px}
+.price s{font-size:14px;color:var(--outline);font-weight:500;margin-left:6px}
+.price small{display:block;font-size:12px;font-weight:500;color:var(--success)}
+
+/* Channel tiles */
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tile{border-radius:var(--r-xl);padding:18px;display:flex;flex-direction:column;gap:10px;min-height:150px;transition:box-shadow .2s}
+.tile:hover{box-shadow:var(--e1)}
+.tile .ms{font-size:28px}
+.tile b{font-size:16px;font-weight:600}
+.tile span{font-size:13px;opacity:.85}
+.tile.wa{background:#D8F5DF;color:#0B4F25}
+.tile.yt{background:#FFE1DC;color:#7A1C0E}
+
+/* Reviews (Google style) */
+.rv{background:#fff;border:1px solid var(--outline-var);border-radius:var(--r-xl);padding:20px}
+.sum{display:flex;gap:24px;align-items:center}
+.big{font-size:56px;font-weight:500;line-height:1;letter-spacing:-1px}
+.sum .stars{color:var(--star);font-size:18px;letter-spacing:2px;margin-top:4px}
+.cnt{font-size:13px;color:var(--on-surface-var)}
+.bars{flex:1;display:grid;gap:4px}
+.br{display:grid;grid-template-columns:12px 1fr 24px;gap:8px;align-items:center;font-size:12px;color:var(--on-surface-var)}
+.br i{height:10px;background:var(--surface-3);border-radius:5px;overflow:hidden}
+.br i b{display:block;height:100%;background:var(--star);border-radius:5px}
+.tools{display:flex;gap:8px;margin:18px 0 6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.tools::-webkit-scrollbar{display:none}
+.fchip{flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 14px;border-radius:8px;border:1px solid var(--outline-var);background:#fff;font:500 13px "Roboto Flex",sans-serif;color:var(--on-surface-var);cursor:pointer}
+.fchip.on{background:var(--primary-container);border-color:var(--primary-container);color:var(--on-primary-container)}
+.fchip .ms{font-size:18px}
+select.fchip{appearance:none;padding-right:28px;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%2344474F' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E") no-repeat right 8px center}
+.rvi{padding:16px 0;border-top:1px solid var(--surface-3)}
+.rvi:first-child{border-top:0}
+.who{display:flex;align-items:center;gap:12px}
+.ini{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-weight:600;color:#fff;font-size:16px}
+.who b{font-size:14px;font-weight:600;display:block}
+.who small{font-size:12px;color:var(--on-surface-var)}
+.rline{display:flex;gap:8px;align-items:center;margin-top:8px;font-size:12px;color:var(--on-surface-var)}
+.rline .stars{color:var(--star);font-size:14px;letter-spacing:1px}
+.rvi p{font-size:14px;margin-top:6px;color:#2E3036}
+.empty{text-align:center;padding:24px 8px;color:var(--on-surface-var);font-size:14px}
+.empty .ms{font-size:40px;color:var(--outline-var);display:block;margin-bottom:6px}
+.samp{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#7A4B00;background:#FFEDC2;border-radius:8px;padding:4px 10px;margin-bottom:12px}
+.rv-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.rv-actions .btn{flex:1}
+
+/* FAQ */
+.faq{background:#fff;border:1px solid var(--outline-var);border-radius:var(--r-xl);overflow:hidden}
+.faq details{border-top:1px solid var(--surface-3)}
+.faq details:first-child{border-top:0}
+.faq summary{list-style:none;cursor:pointer;padding:18px 20px;font-size:15px;font-weight:500;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary .ms{transition:transform .2s;color:var(--on-surface-var)}
+.faq details[open] summary .ms{transform:rotate(180deg)}
+.faq details p{padding:0 20px 18px;font-size:14px;color:var(--on-surface-var)}
+
+/* Trust strip */
+.trust{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.trust div{background:var(--surface-1);border-radius:var(--r-l);padding:14px 10px;text-align:center;font-size:12px;color:var(--on-surface-var)}
+.trust .ms{display:block;margin:0 auto 6px;color:var(--primary)}
+
+footer{text-align:center;font-size:12px;color:var(--on-surface-var);margin-top:32px;line-height:1.7}
+
+/* FAB + bottom sheet */
+.fab{position:fixed;right:max(16px,calc(50% - 284px));bottom:20px;z-index:30;height:56px;padding:0 20px;border-radius:16px;border:0;background:var(--secondary-container);color:var(--on-secondary-container);font:600 15px "Roboto Flex",sans-serif;display:flex;align-items:center;gap:10px;box-shadow:var(--e2);cursor:pointer}
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.32);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
+.scrim.open{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:50%;bottom:0;transform:translate(-50%,100%);width:100%;max-width:600px;background:var(--surface);border-radius:28px 28px 0 0;z-index:50;padding:12px 20px 24px;transition:transform .28s cubic-bezier(.2,0,0,1);max-height:92vh;overflow:auto}
+.sheet.open{transform:translate(-50%,0)}
+.handle{width:32px;height:4px;border-radius:2px;background:var(--outline-var);margin:4px auto 16px}
+.sheet h3{font-size:22px;font-weight:500;margin-bottom:4px}
+.sheet .sub{margin-bottom:16px}
+.pick{display:flex;gap:4px;margin:4px 0 8px}
+.pick button{background:none;border:0;cursor:pointer;color:var(--outline-var);padding:2px}
+.pick button .ms{font-size:40px}
+.pick button.on{color:var(--star)}
+.pick button.on .ms{font-variation-settings:"FILL" 1}
+.field{position:relative;margin-top:16px}
+.field label{position:absolute;left:12px;top:-8px;background:var(--surface);padding:0 4px;font-size:12px;color:var(--on-surface-var)}
+.field input,.field select,.field textarea{width:100%;border:1px solid var(--outline);border-radius:4px;padding:16px 14px;font:400 16px "Roboto Flex",sans-serif;background:transparent;color:var(--on-surface);outline:none}
+.field input:focus,.field select:focus,.field textarea:focus{border:2px solid var(--primary);padding:15px 13px}
+.field textarea{min-height:110px;resize:vertical}
+.help{font-size:12px;color:var(--on-surface-var);margin-top:8px}
+.msg{font-size:14px;font-weight:500;margin-top:12px;min-height:20px}
+.sheet-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
+.snack{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(20px);background:#2F3036;color:#F1F0F7;padding:14px 16px;border-radius:4px;font-size:14px;box-shadow:var(--e2);opacity:0;transition:.2s;z-index:60;max-width:90vw}
+.snack.on{opacity:1;transform:translateX(-50%) translateY(0)}
+@media (max-width:380px){.hero h1{font-size:26px}.stat b{font-size:17px}.big{font-size:44px}}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header class="hero">
-    <div class="av">P</div>
-    <h1>Money Bank</h1>
-    <div class="tag">Loan help from a banker's desk · Porutpaal — The Book of Wealth</div>
-    <p class="intro">I've spent 15+ years in banking, most of it on the credit side, and processed <b>1,000+ loans worth over ₹250 crore</b>: MSME, Mudra, agri and education loans. These simple tools and guides help you get your loan file right, or settle an old loan fairly, without paying a consultant thousands.</p>
-    <div class="badges"><span>🏦 15+ yrs in banking</span><span>📊 1,000+ loans · ₹250 Cr+</span><span>🎓 MBA (Banking &amp; Finance)</span><span>📑 CAIIB certified</span><span>🗣️ Tamil &amp; English</span></div>
-  </header>
+<header class="bar" id="bar"><div class="bar-in">
+  <div class="mark">P</div><div class="bar-t">Money Bank</div>
+  <button class="icon-btn" id="shareTop" aria-label="Share"><span class="ms">share</span></button>
+</div></header>
 
-  <h2>⭐ Most popular</h2>
-  <div class="card feature">
-    <div class="ribbon">BEST VALUE · 50% OFF</div>
-    <div class="top"><div class="ic">📂</div><div><h3>MSME Loan File Kit</h3><div class="who">For business owners, CAs &amp; loan consultants</div></div></div>
-    <p class="desc">Most business loans aren't rejected — they're <b>returned</b> with queries, and each return costs weeks. This kit shows you what the credit officer checks, before you submit.</p>
-    <ul class="pts">
-      <li>Document checklists: Term loan, CC, Mudra, CGTMSE, Stand-Up India, PMEGP</li>
-      <li>25 reasons banks return loan files — and how to fix each</li>
-      <li>CMA &amp; projection Excel: DSCR, current ratio, MPBF calculated automatically</li>
+<main class="wrap">
+  <section class="hero">
+    <div class="eyebrow"><span class="ms f" style="font-size:16px">verified</span>From a banker's desk</div>
+    <h1>Need a loan? <em>Stuck with an old one?</em></h1>
+    <p>Simple tools and guides by a senior credit banker, so you walk into the bank prepared and settle old loans fairly.</p>
+    <div class="stats">
+      <div class="stat"><b>15+</b><span>years in banking</span></div>
+      <div class="stat"><b>1,000+</b><span>loans processed</span></div>
+      <div class="stat"><b>₹250 Cr+</b><span>credit handled</span></div>
+    </div>
+    <div class="creds">
+      <span class="chip-d"><span class="ms">school</span>MBA (Banking &amp; Finance)</span>
+      <span class="chip-d"><span class="ms">workspace_premium</span>CAIIB</span>
+      <span class="chip-d"><span class="ms">translate</span>Tamil &amp; English</span>
+    </div>
+    <div class="hero-cta">
+      <a class="btn btn-gold" href="#products"><span class="ms">storefront</span>See tools</a>
+      <a class="btn btn-ghost-w" href="#reviews"><span class="ms">star</span>Reviews</a>
+    </div>
+  </section>
+
+  <div class="sec" id="products"><div><h2>Most popular</h2><p>Get your loan file right the first time</p></div></div>
+
+  <article class="card feat">
+    <span class="badge"><span class="ms f" style="font-size:16px">local_fire_department</span>Best value · 50% off</span>
+    <div class="row" style="margin-top:14px">
+      <div class="av y"><span class="ms">folder_special</span></div>
+      <div><h3>MSME Loan File Kit</h3><div class="sub">For business owners, CAs &amp; loan consultants</div><div class="prr" data-prod="MSME Loan File Kit"><span class="nw">New</span>Be the first to rate</div></div>
+    </div>
+    <p class="desc">Most business loans aren't rejected — they're <b>returned</b> with queries, and each return costs weeks. See what the credit officer checks before you submit.</p>
+    <ul class="feats">
+      <li><span class="ms f">check_circle</span>Checklists for Term loan, CC, Mudra, CGTMSE, Stand-Up India &amp; PMEGP</li>
+      <li><span class="ms f">check_circle</span>25 reasons banks return files — and how to fix each</li>
+      <li><span class="ms f">check_circle</span>CMA &amp; projection Excel: DSCR, current ratio, MPBF auto-calculated</li>
     </ul>
-    <div class="buy"><div class="price">₹499<s>₹999</s><span class="off">50% OFF</span></div><a class="btn gold" href="https://kreato.co.in/prem/5147744e-cb3b-4721-a3b4-9ba8b90a010c">Get the kit →</a></div>
-  </div>
+    <div class="foot"><div class="price">₹499<s>₹999</s><small>You save ₹500</small></div><a class="btn btn-filled" href="https://kreato.co.in/prem/5147744e-cb3b-4721-a3b4-9ba8b90a010c">Get the kit<span class="ms">arrow_forward</span></a></div>
+  </article>
 
-  <h2>🧮 Loan calculators · ₹100 each</h2>
-  <div class="card">
-    <div class="top"><div class="ic">✅</div><div><h3>MSME Loan Readiness Checker</h3><div class="who">Planning a business loan?</div></div></div>
-    <p class="desc">Get a readiness score out of 100, an estimate of how much you can borrow, and the government schemes that match your business.</p>
-    <div class="buy"><div class="price">₹100</div><a class="btn" href="https://kreato.co.in/prem/6e873b82-4968-4166-bd76-d9c81c431d50">Check now →</a></div>
-  </div>
-  <div class="card">
-    <div class="top"><div class="ic">🌾</div><div><h3>Agri &amp; Mudra Loan OTS Calculator</h3><div class="who">Loan turned NPA? Planning a one-time settlement?</div></div></div>
-    <p class="desc">Estimates a fair settlement figure, a sensible opening offer and the upper limit — so you go to the bank prepared.</p>
-    <div class="buy"><div class="price">₹100</div><a class="btn" href="https://kreato.co.in/prem/5a25bfd0-d536-482c-8d1a-c42629e3aae5">Calculate →</a></div>
-  </div>
-  <div class="card">
-    <div class="top"><div class="ic">🎓</div><div><h3>Education Loan ARC Settlement Calculator</h3><div class="who">Education loan sold to an ARC?</div></div></div>
-    <p class="desc">Calculates a realistic settlement offer for education loans transferred to an Asset Reconstruction Company — before you pay a consulting fee.</p>
-    <div class="buy"><div class="price">₹100</div><a class="btn" href="https://kreato.co.in/prem/7328851c-aedd-4a0d-a777-e3384656d6cb">Calculate →</a></div>
-  </div>
+  <div class="sec"><div><h2>Loan calculators</h2><p>₹100 each · instant results</p></div></div>
 
-  <h2>📞 Talk to me</h2>
-  <div class="card">
-    <div class="top"><div class="ic">🎥</div><div><h3>1:1 Call with a Senior Banker</h3><div class="who">30-minute video call</div></div></div>
+  <article class="card">
+    <div class="row"><div class="av b"><span class="ms">fact_check</span></div>
+      <div><h3>MSME Loan Readiness Checker</h3><div class="sub">Planning a business loan?</div><div class="prr" data-prod="Loan Readiness Checker"><span class="nw">New</span>Be the first to rate</div></div></div>
+    <p class="desc">A readiness score out of 100, an estimate of how much you can borrow, and the government schemes that match your business.</p>
+    <div class="foot"><div class="price">₹100</div><a class="btn btn-tonal" href="https://kreato.co.in/prem/6e873b82-4968-4166-bd76-d9c81c431d50">Check now<span class="ms">arrow_forward</span></a></div>
+  </article>
+
+  <article class="card">
+    <div class="row"><div class="av gr"><span class="ms">agriculture</span></div>
+      <div><h3>Agri &amp; Mudra Loan OTS Calculator</h3><div class="sub">Loan turned NPA? Planning a one-time settlement?</div><div class="prr" data-prod="Agri &amp; Mudra OTS Calculator"><span class="nw">New</span>Be the first to rate</div></div></div>
+    <p class="desc">A fair settlement figure, a sensible opening offer and the upper limit — so you go to the bank prepared.</p>
+    <div class="foot"><div class="price">₹100</div><a class="btn btn-tonal" href="https://kreato.co.in/prem/5a25bfd0-d536-482c-8d1a-c42629e3aae5">Calculate<span class="ms">arrow_forward</span></a></div>
+  </article>
+
+  <article class="card">
+    <div class="row"><div class="av p"><span class="ms">school</span></div>
+      <div><h3>Education Loan ARC Settlement Calculator</h3><div class="sub">Education loan sold to an ARC?</div><div class="prr" data-prod="Education Loan ARC Calculator"><span class="nw">New</span>Be the first to rate</div></div></div>
+    <p class="desc">A realistic settlement offer for education loans transferred to an Asset Reconstruction Company — before you pay a consulting fee.</p>
+    <div class="foot"><div class="price">₹100</div><a class="btn btn-tonal" href="https://kreato.co.in/prem/7328851c-aedd-4a0d-a777-e3384656d6cb">Calculate<span class="ms">arrow_forward</span></a></div>
+  </article>
+
+  <div class="sec"><div><h2>Talk to a banker</h2><p>Personal review of your case</p></div></div>
+
+  <article class="card">
+    <div class="row"><div class="av t"><span class="ms">video_call</span></div>
+      <div><h3>1:1 Call with a Senior Banker</h3><div class="sub">30-minute video call</div><div class="prr" data-prod="1:1 Banker Call"><span class="nw">New</span>Be the first to rate</div></div></div>
     <p class="desc">Share your business loan case and get a straight review: what's missing, what the bank will ask, and your best next step.</p>
-    <div class="buy"><div class="price">₹500</div><a class="btn" href="https://kreato.co.in/prem/session/fa2aadf3-4085-448a-955b-ea25aa8e97ec">Book a call →</a></div>
+    <div class="foot"><div class="price">₹500</div><a class="btn btn-filled" href="https://kreato.co.in/prem/session/fa2aadf3-4085-448a-955b-ea25aa8e97ec"><span class="ms">event</span>Book a call</a></div>
+  </article>
+
+  <div class="trust">
+    <div><span class="ms">lock</span>Secure UPI / card payment</div>
+    <div><span class="ms">bolt</span>Instant download</div>
+    <div><span class="ms">support_agent</span>Real banker, not a bot</div>
   </div>
 
-  <h2>📢 Free daily content</h2>
-  <div class="links">
-    <div class="card"><div><h3>Porutpaal on WhatsApp</h3><p>Daily banking, gold &amp; money insights — simply explained</p></div><a class="btn wa" href="https://whatsapp.com/channel/0029Vb9yDvH6hENrLFC5Ds0U">Follow</a></div>
-    <div class="card"><div><h3>Money Bank on YouTube</h3><p>Loan how-tos in Tamil: Mudra, OTS, KCC, education loans</p></div><a class="btn yt" href="https://www.youtube.com/@MoneyBank">Watch</a></div>
+  <div class="sec" id="reviews"><div><h2>Ratings &amp; reviews</h2><p>From people who used these tools</p></div></div>
+  <section class="rv">
+    <div id="sampleTag"></div>
+    <div class="sum">
+      <div><div class="big" id="avg">–</div><div class="stars" id="avgSt">☆☆☆☆☆</div><div class="cnt" id="cnt">No reviews yet</div></div>
+      <div class="bars" id="bars"></div>
+    </div>
+    <div class="tools">
+      <select class="fchip" id="fProd" aria-label="Product"><option value="">All products</option><option>MSME Loan File Kit</option><option>Loan Readiness Checker</option><option>Agri &amp; Mudra OTS Calculator</option><option>Education Loan ARC Calculator</option><option>1:1 Banker Call</option></select>
+      <button class="fchip on" data-sort="new"><span class="ms">schedule</span>Newest</button>
+      <button class="fchip" data-sort="high"><span class="ms">trending_up</span>Highest</button>
+      <button class="fchip" data-sort="low"><span class="ms">trending_down</span>Lowest</button>
+    </div>
+    <div class="tools" id="chips">
+      <button class="fchip on" data-s="0">All</button>
+      <button class="fchip" data-s="5">5 ★</button><button class="fchip" data-s="4">4 ★</button><button class="fchip" data-s="3">3 ★</button><button class="fchip" data-s="2">2 ★</button><button class="fchip" data-s="1">1 ★</button>
+    </div>
+    <div id="list"></div>
+    <div class="rv-actions">
+      <button class="btn btn-outline" id="more" style="display:none">See all reviews</button>
+      <button class="btn btn-filled" id="wopen2"><span class="ms">rate_review</span>Write a review</button>
+    </div>
+  </section>
+
+  <div class="sec"><div><h2>Free daily content</h2><p>Banking, gold &amp; money — simply explained</p></div></div>
+  <div class="tiles">
+    <a class="tile wa" href="https://whatsapp.com/channel/0029Vb9yDvH6hENrLFC5Ds0U"><span class="ms">forum</span><b>Porutpaal on WhatsApp</b><span>Daily money insights</span></a>
+    <a class="tile yt" href="https://www.youtube.com/@MoneyBank"><span class="ms f">smart_display</span><b>Money Bank on YouTube</b><span>Loan how-tos in Tamil</span></a>
   </div>
 
-  <div class="card why">
-    <h3>Why trust these tools?</h3>
-    <p>They're built from the same checks a bank's credit desk uses every day. No jargon, no false promises — just what you need to walk into the bank prepared.</p>
+  <div class="sec"><div><h2>Common questions</h2></div></div>
+  <div class="faq">
+    <details><summary>How do I receive the product?<span class="ms">expand_more</span></summary><p>Pay securely on Kreato with UPI or card and download instantly. The download link is also emailed to you.</p></details>
+    <details><summary>Will this guarantee my loan approval?<span class="ms">expand_more</span></summary><p>No one can guarantee a sanction — every bank applies its own policy. These tools help you avoid the common mistakes that delay or block a file.</p></details>
+    <details><summary>Is it available in Tamil?<span class="ms">expand_more</span></summary><p>The products are in simple English. YouTube videos and 1:1 calls are available in Tamil.</p></details>
   </div>
 
-  <h2>❓ Common questions</h2>
-  <details><summary>How do I receive the product?</summary><p>Pay securely on Kreato (UPI or card) and download instantly. Your purchase link is also emailed to you.</p></details>
-  <details><summary>Will this guarantee my loan approval?</summary><p>No one can guarantee a sanction — each bank applies its own policy. These tools help you avoid the common mistakes that delay or block a file.</p></details>
-  <details><summary>Is this in Tamil?</summary><p>The products are in English and easy to follow. The YouTube videos and calls are available in Tamil.</p></details>
+  <footer>© Money Bank · Porutpaal — The Book of Wealth<br>Educational tools only. Not financial or legal advice.</footer>
+</main>
 
-  <h2>🔗 Share this page</h2>
-  <div class="share"><button id="copy">📋 Copy link</button><button id="copymsg">💬 Copy message</button></div>
-  <div class="toast" id="toast"></div>
+<button class="fab" id="wopen"><span class="ms">edit</span>Write a review</button>
 
-  <p class="foot">© Money Bank · Porutpaal — The Book of Wealth<br>Educational tools only. Not financial or legal advice.</p>
-</div>
+<div class="scrim" id="scrim"></div>
+<form class="sheet" id="sheet" aria-label="Write a review">
+  <div class="handle"></div>
+  <h3>Rate &amp; review</h3>
+  <div class="sub">Reviews are public and appear after a quick check.</div>
+  <div class="pick" id="pick">
+    <button type="button" data-v="1" aria-label="1 star"><span class="ms">star</span></button>
+    <button type="button" data-v="2" aria-label="2 stars"><span class="ms">star</span></button>
+    <button type="button" data-v="3" aria-label="3 stars"><span class="ms">star</span></button>
+    <button type="button" data-v="4" aria-label="4 stars"><span class="ms">star</span></button>
+    <button type="button" data-v="5" aria-label="5 stars"><span class="ms">star</span></button>
+  </div>
+  <div class="field"><label for="wProd">Product</label><select id="wProd"><option>MSME Loan File Kit</option><option>Loan Readiness Checker</option><option>Agri &amp; Mudra OTS Calculator</option><option>Education Loan ARC Calculator</option><option>1:1 Banker Call</option></select></div>
+  <div class="field"><label for="wName">Your name</label><input id="wName" maxlength="40" required></div>
+  <div class="field"><label for="wTown">Town (optional)</label><input id="wTown" maxlength="40"></div>
+  <div class="field"><label for="wText">Your review</label><textarea id="wText" maxlength="600" placeholder="What did you like? What could be better?" required></textarea></div>
+  <div class="help">Please don't share phone numbers or loan account details.</div>
+  <div class="msg" id="wMsg"></div>
+  <div class="sheet-actions"><button type="button" class="btn" style="background:none;color:var(--primary)" id="wcancel">Cancel</button><button type="submit" class="btn btn-filled">Post</button></div>
+</form>
+<div class="snack" id="snack"></div>
+
 <script>
-const t=document.getElementById('toast');
-function cp(text,msg){try{navigator.clipboard.writeText(text).then(()=>{t.textContent=msg},()=>{t.textContent='Copy not allowed here — long-press the address bar to copy.'})}catch(e){t.textContent='Copy not allowed here — long-press the address bar to copy.'}}
-document.getElementById('copy').onclick=()=>cp(location.href,'Link copied ✓');
-document.getElementById('copymsg').onclick=()=>cp('Planning a business loan or settling an old one? A senior banker\'s simple tools & guides — loan file kit, readiness checker, OTS & ARC calculators: '+location.href,'Message copied ✓ — paste it in WhatsApp or SMS');
+const CFG={API_URL:'https://script.google.com/macros/s/AKfycbwypTAmMr68Y4fYwOcNsT4EGtGsPrVR394mmgaFdnCX7JkfVqUQlRlvbSZ0h5Q47LVc/exec',PREVIEW_SAMPLES:false};
+const SAMPLE=[
+ {p:'MSME Loan File Kit',r:5,n:'Sample A',t:'Kumbakonam',x:'(Sample) The checklist saved me two trips to the bank.',d:'2026-11-17'},
+ {p:'Agri & Mudra OTS Calculator',r:4,n:'Sample B',t:'Thiruvarur',x:'(Sample) Gave me a clear figure to start the talk with the bank.',d:'2026-11-16'},
+ {p:'Loan Readiness Checker',r:3,n:'Sample C',t:'',x:'(Sample) Useful, but I wanted more on CGTMSE.',d:'2026-11-15'}];
+let ALL=[],shown=3,star=0,sort='new',pv=0;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const stars=v=>'★'.repeat(Math.round(v))+'☆'.repeat(5-Math.round(v));
+const COLORS=['#1A4D8F','#7A5900','#146C2E','#4F378B','#00497D','#9C4146'];
+function snack(t){const s=$('snack');s.textContent=t;s.classList.add('on');clearTimeout(s._t);s._t=setTimeout(()=>s.classList.remove('on'),2600)}
+async function load(){
+  if(CFG.API_URL){try{ALL=(await (await fetch(CFG.API_URL)).json()).filter(o=>o.r>=1&&o.r<=5)}catch(e){ALL=[]}}
+  if(!ALL.length&&CFG.PREVIEW_SAMPLES){ALL=SAMPLE;$('sampleTag').innerHTML='<span class="samp"><span class="ms" style="font-size:16px">info</span>Preview · sample reviews, not real</span>'}
+  render();
+}
+function render(){
+  const fp=$('fProd').value;const base=ALL.filter(o=>!fp||o.p==fp);const n=base.length;const avg=n?base.reduce((a,o)=>a+o.r,0)/n:0;
+  $('avg').textContent=n?avg.toFixed(1):'–';$('avgSt').textContent=n?stars(avg):'☆☆☆☆☆';
+  $('cnt').textContent=n?n+' review'+(n>1?'s':''):'No reviews yet';
+  $('bars').innerHTML=[5,4,3,2,1].map(s=>{const c=base.filter(o=>o.r==s).length;return '<div class="br"><span>'+s+'</span><i><b style="width:'+(n?c/n*100:0)+'%"></b></i><span>'+c+'</span></div>'}).join('');
+  let L=base.filter(o=>!star||o.r==star);
+  L.sort(sort=='high'?(a,b)=>b.r-a.r:sort=='low'?(a,b)=>a.r-b.r:(a,b)=>String(b.d).localeCompare(String(a.d)));
+  $('list').innerHTML=L.length?L.slice(0,shown).map((o,i)=>{const c=COLORS[(o.n||'?').charCodeAt(0)%COLORS.length];return '<div class="rvi"><div class="who"><div class="ini" style="background:'+c+'">'+esc((o.n||'?').trim().charAt(0).toUpperCase())+'</div><div><b>'+esc(o.n)+'</b><small>'+esc(o.t||'')+'</small></div></div><div class="rline"><span class="stars">'+stars(o.r)+'</span><span>'+esc(o.d)+' · '+esc(o.p)+'</span></div><p>'+esc(o.x)+'</p></div>'}).join(''):'<div class="empty"><span class="ms">reviews</span>'+(ALL.length?'No reviews match this filter.':'Be the first to share your experience.')+'</div>';
+  $('more').style.display=L.length>shown?'inline-flex':'none';
+  document.querySelectorAll('.prr').forEach(e=>{const P=ALL.filter(o=>o.p==e.dataset.prod);if(P.length){const a=P.reduce((s,o)=>s+o.r,0)/P.length;e.innerHTML='<span class="stars">'+stars(a)+'</span><b style="color:var(--on-surface)">'+a.toFixed(1)+'</b> ('+P.length+')'}});
+}
+$('fProd').onchange=()=>{shown=3;render()};
+document.querySelectorAll('[data-sort]').forEach(b=>b.onclick=()=>{sort=b.dataset.sort;document.querySelectorAll('[data-sort]').forEach(x=>x.classList.toggle('on',x==b));render()});
+document.querySelectorAll('#chips .fchip').forEach(b=>b.onclick=()=>{star=+b.dataset.s;document.querySelectorAll('#chips .fchip').forEach(x=>x.classList.toggle('on',x==b));shown=3;render()});
+$('more').onclick=()=>{shown=999;render()};
+function openSheet(){$('sheet').classList.add('open');$('scrim').classList.add('open')}
+function closeSheet(){$('sheet').classList.remove('open');$('scrim').classList.remove('open')}
+$('wopen').onclick=openSheet;$('wopen2').onclick=openSheet;$('scrim').onclick=closeSheet;$('wcancel').onclick=closeSheet;
+document.querySelectorAll('#pick button').forEach(b=>b.onclick=()=>{pv=+b.dataset.v;document.querySelectorAll('#pick button').forEach(x=>x.classList.toggle('on',+x.dataset.v<=pv))});
+$('sheet').onsubmit=async e=>{e.preventDefault();const m=$('wMsg');
+  if(!pv){m.style.color='#B3261E';m.textContent='Please tap a star rating.';return}
+  if(!CFG.API_URL){m.style.color='#7A4B00';m.textContent='Preview only — not connected.';return}
+  const body=JSON.stringify({product:$('wProd').value,rating:pv,name:$('wName').value,town:$('wTown').value,text:$('wText').value});
+  try{await fetch(CFG.API_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body});e.target.reset();pv=0;document.querySelectorAll('#pick button').forEach(x=>x.classList.remove('on'));m.textContent='';closeSheet();snack('Thanks! Your review will appear after a quick check.')}
+  catch(err){m.style.color='#B3261E';m.textContent='Could not post. Please try again.'}};
+async function share(){const u=location.href;try{await navigator.clipboard.writeText(u);snack('Link copied')}catch(e){snack('Copy the link from the address bar')}}
+$('shareTop').onclick=share;
+addEventListener('scroll',()=>$('bar').classList.toggle('sc',scrollY>8),{passive:true});
+load();
 </script>
 </body>
 </html>
